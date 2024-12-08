@@ -70,5 +70,5 @@ func validateArgs(search, replace, subject string) (*regexp.Regexp, error) {
 }
 
 func findReplace(searchPattern *regexp.Regexp, replace, subject string) string {
-	return string(searchPattern.ReplaceAll([]byte(subject), []byte(replace)))
+	return string(searchPattern.ReplaceAllString(subject, replace))
 }

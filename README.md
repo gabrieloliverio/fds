@@ -18,7 +18,7 @@ $ echo "some text" | fds text replacement # Using stdin
 
 - [x] Stdin (pipe) + replacement as string
 - [x] Positional parameters
-- [ ] Replacement as RegEx
+- [x] Replacement as RegEx
 - [ ] Single file
 - [ ] Glob and directories
 - [ ] Interactive mode
