@@ -22,7 +22,8 @@ $ fds ./adir text replacement # Reading directory
 - [x] Stdin (pipe) + replacement as string
 - [x] Positional parameters
 - [x] Replacement as RegEx
-- [x] Single file
+- [x] Single file reading the whole shebang
+- [ ] Single file reading chunks
 - [ ] Glob and directories
 - [ ] Interactive mode
 - [ ] Concurrent

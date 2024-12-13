@@ -9,7 +9,7 @@ func TestFindReplace_ReplaceAsSimpleString(t *testing.T) {
 	searchPattern := regexp.MustCompile("text")
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := findReplace(searchPattern, replace, subject)
+	result := replacePattern(searchPattern, replace, subject)
 
 	want := regexp.MustCompile("this is some replacement, this is some other replacement")
 
@@ -22,7 +22,7 @@ func TestFindReplace_CapturingGroup(t *testing.T) {
 	searchPattern := regexp.MustCompile("(text)")
 	replace := "other $1"
 	subject := "this is some text"
-	result := findReplace(searchPattern, replace, subject)
+	result := replacePattern(searchPattern, replace, subject)
 
 	want := regexp.MustCompile("this is some other text")
 
@@ -35,7 +35,7 @@ func TestFindReplaceNotMatch(t *testing.T) {
 	searchPattern := regexp.MustCompile("<fooo>")
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := findReplace(searchPattern, replace, subject)
+	result := replacePattern(searchPattern, replace, subject)
 
 	want := regexp.MustCompile("this is some text, this is some other text")
 

@@ -4,64 +4,110 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io/fs"
 	"os"
 	"regexp"
 )
 
+type fileArg struct {
+	path string
+}
+
+type args struct {
+	subject string
+	search  string
+	replace string
+
+	file fileArg
+}
+
+func (a args) validate() error {
+	usage := "usage:  fds subject search_pattern replace\n" +
+		"\techo subject search_pattern replace\n" +
+		"\tfds ./file search_pattern replace\n"
+
+	if _, err := regexp.Compile(a.search); err != nil {
+		return fmt.Errorf(usage)
+	}
+
+	if a.replace == "" {
+		return fmt.Errorf(usage)
+	}
+
+	if a.subject == "" {
+		return fmt.Errorf(usage)
+	}
+
+	return nil
+}
+
+func readArgs() args {
+	if subject := readFile(os.Stdin); subject != "" {
+		return args{subject: subject, search: flag.Arg(0), replace: flag.Arg(1)}
+	}
+
+	args := args{
+		subject: flag.Arg(0),
+		search:  flag.Arg(1),
+		replace: flag.Arg(2),
+	}
+
+	fileStat, err := os.Stat(args.subject)
+
+	if err == nil && !fileStat.IsDir() {
+		args.file = fileArg{path: args.subject}
+	}
+
+	return args
+}
+
 func main() {
 	flag.Parse()
 
-	var subjectArg, searchArg, replace, content string
-	var subjectIsFile bool
 	var inputFile, outputFile *os.File
 	var err error
-	var fileStat fs.FileInfo
 
-	content = readFile(os.Stdin)
+	args := readArgs()
 
-	if content != "" {
-		searchArg = flag.Arg(0)
-		replace = flag.Arg(1)
-	} else {
-		subjectArg = flag.Arg(0)
-		searchArg = flag.Arg(1)
-		replace = flag.Arg(2)
-
-		fileStat, err = os.Stat(subjectArg)
-
-		if err == nil && !fileStat.IsDir() {
-			subjectIsFile = true
-
-			inputFile, err = os.OpenFile(subjectArg, os.O_RDONLY, fileStat.Mode().Perm())
-			check(err)
-
-			defer inputFile.Close()
-
-			content = readFile(inputFile)
-
-			outputFile, err = os.OpenFile(subjectArg, os.O_WRONLY|os.O_TRUNC, fileStat.Mode().Perm())
-			check(err)
-
-			defer outputFile.Close()
-		} else {
-			content = subjectArg
-		}
-	}
-
-	searchPattern, err := validateArgs(searchArg, replace, content)
-
-	check(err)
-
-	result := findReplace(searchPattern, replace, content)
-
-	if subjectIsFile {
-		_, err = outputFile.WriteString(result)
+	if args.file.path == "" {
+		err = args.validate()
 
 		check(err)
-	} else {
+
+		result := replacePattern(regexp.MustCompile(args.search), args.replace, args.subject)
+
 		fmt.Println(result)
+
+		os.Exit(0)
 	}
+
+	inputFile, err = os.Open(args.file.path)
+	check(err)
+
+	defer inputFile.Close()
+
+	fileStat, _ := inputFile.Stat()
+	subject := readFile(inputFile)
+
+	outputFile, err = os.OpenFile(args.file.path, os.O_WRONLY|os.O_TRUNC, fileStat.Mode().Perm())
+	check(err)
+
+	defer outputFile.Close()
+
+	err = replaceInFile(subject, outputFile, args)
+
+	check(err)
+}
+
+func replacePattern(searchPattern *regexp.Regexp, replace, subject string) string {
+	return searchPattern.ReplaceAllString(subject, replace)
+}
+
+func replaceInFile(fileContent string, outputFile *os.File, args args) error {
+	result := replacePattern(regexp.MustCompile(args.search), args.replace, fileContent)
+
+	_, err := outputFile.WriteString(result)
+
+	return err
 }
 
 func check(err error) {
@@ -86,25 +132,4 @@ func readFile(stdin *os.File) string {
 	}
 
 	return subject
-}
-
-func validateArgs(search, replace, subject string) (*regexp.Regexp, error) {
-	searchPattern, err := regexp.Compile(search)
-	if err != nil {
-		err = fmt.Errorf("search is not a valid pattern")
-	}
-
-	if replace == "" {
-		err = fmt.Errorf("replace is empty")
-	}
-
-	if subject == "" {
-		err = fmt.Errorf("subject is empty")
-	}
-
-	return searchPattern, err
-}
-
-func findReplace(searchPattern *regexp.Regexp, replace, subject string) string {
-	return string(searchPattern.ReplaceAllString(subject, replace))
 }
