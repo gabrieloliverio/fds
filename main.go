@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -63,7 +64,7 @@ func readArgs() args {
 func main() {
 	flag.Parse()
 
-	var inputFile, outputFile *os.File
+	var inputFile *os.File
 	var err error
 
 	args := readArgs()
@@ -80,34 +81,20 @@ func main() {
 		os.Exit(0)
 	}
 
-	inputFile, err = os.Open(args.file.path)
+	fileStat, _ := os.Stat(args.file.path)
+	inputFile, err = os.OpenFile(args.file.path, os.O_RDWR, fileStat.Mode())
+
 	check(err)
 
 	defer inputFile.Close()
 
-	fileStat, _ := inputFile.Stat()
-	subject := readFile(inputFile)
-
-	outputFile, err = os.OpenFile(args.file.path, os.O_WRONLY|os.O_TRUNC, fileStat.Mode().Perm())
-	check(err)
-
-	defer outputFile.Close()
-
-	err = replaceInFile(subject, outputFile, args)
+	err = replaceInFileChunks(inputFile, args)
 
 	check(err)
 }
 
 func replacePattern(searchPattern *regexp.Regexp, replace, subject string) string {
 	return searchPattern.ReplaceAllString(subject, replace)
-}
-
-func replaceInFile(fileContent string, outputFile *os.File, args args) error {
-	result := replacePattern(regexp.MustCompile(args.search), args.replace, fileContent)
-
-	_, err := outputFile.WriteString(result)
-
-	return err
 }
 
 func check(err error) {
@@ -117,19 +104,62 @@ func check(err error) {
 	}
 }
 
-func readFile(stdin *os.File) string {
-	stat, _ := stdin.Stat()
+func readFile(file *os.File) string {
+	stat, _ := file.Stat()
 
 	if stat.Size() == 0 {
 		return ""
 	}
 
-	scanner := bufio.NewScanner(stdin)
-	subject := ""
+	scanner := bufio.NewScanner(file)
+	var content string
 
 	for scanner.Scan() {
-		subject += scanner.Text()
+		content += scanner.Text()
 	}
 
-	return subject
+	return content
+}
+
+func replaceInFileChunks(file *os.File, args args) error {
+	inputFileStat, _ := file.Stat()
+	searchPattern := regexp.MustCompile(args.search)
+	var err error
+
+	if inputFileStat.Size() == 0 {
+		return nil
+	}
+
+	scanner := bufio.NewScanner(file)
+	var bs []byte
+	buf := bytes.NewBuffer(bs)
+
+	var text string
+	for scanner.Scan() {
+		text = scanner.Text()
+
+		replaced := replacePattern(searchPattern, args.replace, text)
+
+		_, err = buf.WriteString(replaced + "\n")
+
+		if err != nil {
+			return err
+		}
+	}
+
+	err = file.Truncate(0)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Seek(0, 0)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = buf.WriteTo(file)
+
+	return err
 }
