@@ -63,6 +63,7 @@ func main() {
 	flag.Parse()
 
 	var inputFile, tmpFile *os.File
+	var inputFilePath string
 	var err error
 
 	args := readArgs()
@@ -79,14 +80,21 @@ func main() {
 		os.Exit(0)
 	}
 
-	fileStat, _ := os.Stat(args.file.path)
-	inputFile, err = os.OpenFile(args.file.path, os.O_RDONLY, fileStat.Mode())
+	inputFilePath = args.file.path
+	fileStat, _ := os.Lstat(args.file.path)
+
+	if fileStat.Mode().Type() == os.ModeSymlink.Type() {
+		inputFilePath, _ = filepath.EvalSymlinks(args.file.path)
+		inputFilePath, _ = filepath.Abs(inputFilePath)
+	}
+
+	inputFile, err = os.OpenFile(inputFilePath, os.O_RDONLY, fileStat.Mode())
 
 	check(err)
 
 	defer inputFile.Close()
 
-	tmpFile, err = os.CreateTemp("", filepath.Base(inputFile.Name()))
+	tmpFile, err = os.CreateTemp("", filepath.Base(inputFilePath))
 
 	check(err)
 
