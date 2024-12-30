@@ -30,7 +30,8 @@ $ fds dir/**/file.* text replacement            # Glob
 - [x] Replacement as RegEx
 - [x] "Inline" replace for single file, writing content into temp file and renaming it
 - [x] Support for symlinks (similar to sed's `--follow-symlink`)
-- [ ] Support for string-literal mode
+- [x] Support for string-literal mode
+- [ ] Support for case-insensitive mode
 - [ ] Interactive mode
 - [ ] Multiple files, directories and Glob
 - [ ] Concurrency when reading/writing several files

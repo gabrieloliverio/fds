@@ -5,42 +5,67 @@ import (
 	"testing"
 )
 
-func TestFindReplace_ReplaceAsSimpleString(t *testing.T) {
-	searchPattern := regexp.MustCompile("text")
+func TestReplaceStringOrPattern_LiteralString(t *testing.T) {
+	search := "text"
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := replacePattern(searchPattern, replace, subject)
+	result := replaceStringOrPattern(search, replace, subject, true)
 
 	want := regexp.MustCompile("this is some replacement, this is some other replacement")
 
 	if !want.MatchString(result) {
-		t.Fatalf(`search() = %q, want %#q`, result, want)
+		t.Fatalf(`replaceStringOrPattern() = %q, want %#q`, result, want)
 	}
 }
 
-func TestFindReplace_CapturingGroup(t *testing.T) {
-	searchPattern := regexp.MustCompile("(text)")
+func TestReplaceStringOrPattern_RegEx(t *testing.T) {
+	searchPattern := "t.xt"
+	replace := "replacement"
+	subject := "this is some text"
+	result := replaceStringOrPattern(searchPattern, replace, subject, false)
+
+	want := regexp.MustCompile("this is some replacement")
+
+	if !want.MatchString(result) {
+		t.Fatalf(`replaceStringOrPattern() = %q, want %#q`, result, want)
+	}
+}
+
+func TestReplaceStringOrPattern_RegExCapturingGroup(t *testing.T) {
+	searchPattern := "(text)"
 	replace := "other $1"
 	subject := "this is some text"
-	result := replacePattern(searchPattern, replace, subject)
+	result := replaceStringOrPattern(searchPattern, replace, subject, false)
 
 	want := regexp.MustCompile("this is some other text")
 
 	if !want.MatchString(result) {
-		t.Fatalf(`search() = %q, want %#q`, result, want)
+		t.Fatalf(`replaceStringOrPattern() = %q, want %#q`, result, want)
 	}
 }
 
-func TestFindReplaceNotMatch(t *testing.T) {
-	searchPattern := regexp.MustCompile("<fooo>")
+func TestReplaceStringOrPattern_RegExNotMatch(t *testing.T) {
+	searchPattern := "<fooo>"
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := replacePattern(searchPattern, replace, subject)
+	result := replaceStringOrPattern(searchPattern, replace, subject, false)
 
 	want := regexp.MustCompile("this is some text, this is some other text")
 
 	if !want.MatchString(result) {
-		t.Fatalf(`search() = %q, want %#q`, result, want)
+		t.Fatalf(`replaceStringOrPattern() = %q, want %#q`, result, want)
 	}
+}
 
+func TestReplaceStringOrPattern_LiteralNotMatch(t *testing.T) {
+	searchPattern := "<fooo>"
+	replace := "replacement"
+	subject := "this is some text, this is some other text"
+	result := replaceStringOrPattern(searchPattern, replace, subject, true)
+
+	want := regexp.MustCompile("this is some text, this is some other text")
+
+	if !want.MatchString(result) {
+		t.Fatalf(`replaceStringOrPattern() = %q, want %#q`, result, want)
+	}
 }
