@@ -25,21 +25,27 @@ type args struct {
 }
 
 const usage = `Usage:
-	fds [--literal] subject search_pattern replace
-	echo subject | fds [--literal] search_pattern replace
-	fds [--literal] ./file search_pattern replace
+	fds [--literal] subject [ search_pattern ] [ replace ]
+	echo subject | fds [ options ] [ search_pattern ] [ replace ]
+	fds [--literal] ./file [ search_pattern ] [ replace ]
 
-	Options:
+Options:
 
-		-l, --literal 	Treat pattern as a regular string instead of as Regular Expression`
+	-l, --literal 		Treat pattern as a regular string instead of as Regular Expression
+	-i, --insensitive 	Ignore case on search
+`
 
-func validate(a args, literalMode bool) error {
+func validate(a args, literalMode, insensitiveMode bool) error {
 	usageErr := errors.New(usage)
 
 	_, err := regexp.Compile(a.search)
 
 	if !literalMode && err != nil {
-		return usageErr
+		return fmt.Errorf("%s\n%s\n", usage, "[ search_pattern ] is not a valid Regular Expression")
+	}
+
+	if literalMode && insensitiveMode {
+		return fmt.Errorf("%s\n%s\n", usage, "[ -l, --literal ] cannot be used along with [ -i, --insensitive ]")
 	}
 
 	if a.replace == "" || a.subject == "" {
@@ -70,11 +76,17 @@ func readArgs() args {
 }
 
 func main() {
-	var literalMode bool
+	var (
+		literalFlag, insensitiveFlag bool
+	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
-	flag.BoolVar(&literalMode, "l", false, "Treat pattern as a regular string instead of as Regular Expression")
-	flag.BoolVar(&literalMode, "literal", false, "Treat pattern as a regular string instead of as Regular Expression")
+
+	flag.BoolVar(&literalFlag, "l", false, "Treat pattern as a regular string instead of as Regular Expression")
+	flag.BoolVar(&literalFlag, "literal", false, "Treat pattern as a regular string instead of as Regular Expression")
+
+	flag.BoolVar(&insensitiveFlag, "i", false, "Insensitive case on search")
+	flag.BoolVar(&insensitiveFlag, "insensitive", false, "Insensitive case on search")
 
 	flag.Parse()
 
@@ -85,11 +97,11 @@ func main() {
 	args := readArgs()
 
 	if args.file.path == "" {
-		err = validate(args, literalMode)
+		err = validate(args, literalFlag, insensitiveFlag)
 
 		check(err)
 
-		fmt.Println(replaceStringOrPattern(args.search, args.replace, args.subject, literalMode))
+		fmt.Println(replaceStringOrPattern(args.search, args.replace, args.subject, literalFlag, insensitiveFlag))
 
 		os.Exit(0)
 	}
@@ -114,16 +126,20 @@ func main() {
 
 	defer tmpFile.Close()
 
-	err = replaceInFile(inputFile, tmpFile, args, literalMode)
+	err = replaceInFile(inputFile, tmpFile, args, literalFlag, insensitiveFlag)
 
 	err = os.Rename(tmpFile.Name(), inputFile.Name())
 
 	check(err)
 }
 
-func replaceStringOrPattern(search, replace, subject string, literal bool) string {
-	if literal {
+func replaceStringOrPattern(search, replace, subject string, literalFlag, insensitiveFlag bool) string {
+	if literalFlag {
 		return strings.ReplaceAll(subject, search, replace)
+	}
+
+	if insensitiveFlag {
+		search = "(?i)" + search
 	}
 
 	return regexp.MustCompile(search).ReplaceAllString(subject, replace)
@@ -153,7 +169,7 @@ func readFile(file *os.File) string {
 	return content
 }
 
-func replaceInFile(inputFile, outputFile *os.File, args args, literal bool) error {
+func replaceInFile(inputFile, outputFile *os.File, args args, literalFlag, insensitiveFlag bool) error {
 	inputFileStat, _ := inputFile.Stat()
 	var err error
 
@@ -171,7 +187,7 @@ func replaceInFile(inputFile, outputFile *os.File, args args, literal bool) erro
 			break
 		}
 
-		replaced := replaceStringOrPattern(args.search, args.replace, line, literal)
+		replaced := replaceStringOrPattern(args.search, args.replace, line, literalFlag, insensitiveFlag)
 
 		_, err = writer.WriteString(replaced)
 
