@@ -10,23 +10,12 @@ import (
 	"github.com/gabrieloliverio/fds/replace"
 )
 
-const usage = `Usage:
-	fds [--literal] subject [ search_pattern ] [ replace ]
-	echo subject | fds [ options ] [ search_pattern ] [ replace ]
-	fds [--literal] ./file [ search_pattern ] [ replace ]
-
-Options:
-
-	-l, --literal 		Treat pattern as a regular string instead of as Regular Expression
-	-i, --insensitive 	Ignore case on search
-`
-
 func main() {
 	var (
 		literalFlag, insensitiveFlag bool
 	)
 
-	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
+	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
 
 	flag.BoolVar(&literalFlag, "l", false, "Treat pattern as a regular string instead of as Regular Expression")
 	flag.BoolVar(&literalFlag, "literal", false, "Treat pattern as a regular string instead of as Regular Expression")
@@ -40,9 +29,9 @@ func main() {
 	var inputFilePath string
 	var err error
 
-	args := input.ReadArgs()
+	args := input.ReadArgs(os.Stdin, flag.Args())
 
-	err = input.Validate(args, usage, literalFlag, insensitiveFlag)
+	err = input.Validate(args, literalFlag, insensitiveFlag)
 	check(err)
 
 	if args.File.Path == "" {
