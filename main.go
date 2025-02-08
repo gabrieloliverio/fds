@@ -12,7 +12,7 @@ import (
 
 func main() {
 	var (
-		literalFlag, insensitiveFlag bool
+		literalFlag, insensitiveFlag, confirmFlag bool
 	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
@@ -23,21 +23,25 @@ func main() {
 	flag.BoolVar(&insensitiveFlag, "i", false, "Insensitive case on search")
 	flag.BoolVar(&insensitiveFlag, "insensitive", false, "Insensitive case on search")
 
+	flag.BoolVar(&confirmFlag, "c", false, "Confirm each substitution")
+	flag.BoolVar(&confirmFlag, "confirm", false, "Confirm each substitution")
+
 	flag.Parse()
 
 	var inputFile, tmpFile *os.File
 	var inputFilePath string
 	var err error
 
-	args := input.ReadArgs(os.Stdin, flag.Args())
+	args, err := input.ReadArgs(os.Stdin, flag.Args())
+	check(err)
 
-	err = input.Validate(args, literalFlag, insensitiveFlag)
+	err = input.Validate(args, literalFlag, insensitiveFlag, confirmFlag)
 	check(err)
 
 	if args.File.Path == "" {
-		fmt.Println(replace.ReplaceStringOrPattern(args.Search, args.Replace, args.Subject, literalFlag, insensitiveFlag))
+		fmt.Print(replace.ReplaceAllStringOrPattern(args.Search, args.Replace, args.Subject, literalFlag, insensitiveFlag))
 
-		os.Exit(0)
+		return
 	}
 
 	inputFile, err = getInputFile(args)
@@ -50,7 +54,12 @@ func main() {
 
 	defer tmpFile.Close()
 
-	err = replace.ReplaceInFile(inputFile, tmpFile, args, literalFlag, insensitiveFlag)
+	if confirmFlag {
+		err = replace.ConfirmAndReplace(inputFile, tmpFile, os.Stdin, args, literalFlag, insensitiveFlag, confirmFlag)
+	} else {
+		err = replace.ReplaceInFile(inputFile, tmpFile, args, literalFlag, insensitiveFlag)
+	}
+
 	check(err)
 
 	err = os.Rename(tmpFile.Name(), inputFile.Name())

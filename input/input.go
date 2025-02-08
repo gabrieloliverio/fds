@@ -16,6 +16,7 @@ Options:
 
 	-l, --literal 		Treat pattern as a regular string instead of as Regular Expression
 	-i, --insensitive 	Ignore case on search
+	-c, --confirm 		Confirm each substitution
 `
 
 type fileArg struct {
@@ -30,37 +31,49 @@ type Args struct {
 	File fileArg
 }
 
-func Validate(a Args, literalMode, insensitiveMode bool) error {
-	_, err := regexp.Compile(a.Search)
+func Validate(args Args, literalFlag, insensitiveFlag, confirmFlag bool) error {
+	_, err := regexp.Compile(args.Search)
 
-	if !literalMode && err != nil {
+	if !literalFlag && err != nil {
 		return NewInvalidRegExpError()
 	}
 
-	if literalMode && insensitiveMode {
+	if literalFlag && insensitiveFlag {
 		return NewLiteralInsensitiveError()
 	}
 
-	if strings.Trim(a.Replace, " ") == "" || strings.Trim(a.Subject, " ") == "" || strings.Trim(a.Search, " ") == "" {
+	if confirmFlag && args.File.Path == "" {
+		return NewConfirmNotOnFileError()
+	}
+
+	if strings.TrimSpace(args.Replace) == "" || strings.TrimSpace(args.Subject) == "" || strings.TrimSpace(args.Search) == "" {
 		return NewInvalidArgumentsError()
 	}
 
 	return nil
 }
 
-func ReadArgs(stdin *os.File, flagArgs []string) Args {
+func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
 	stdinStat, _ := stdin.Stat()
 
 	if stdinStat.Size() > 0 {
 		stdin, _ := io.ReadAll(stdin)
 
-		return Args{Subject: string(stdin), Search: flagArgs[0], Replace: flagArgs[1]}
+		if len(inputArgs) < 2 {
+			return Args{}, NewInvalidArgumentsError()
+		}
+
+		return Args{Subject: string(stdin), Search: inputArgs[0], Replace: inputArgs[1]}, nil
+	}
+
+	if len(inputArgs) < 3 {
+		return Args{}, NewInvalidArgumentsError()
 	}
 
 	args := Args{
-		Subject: flagArgs[0],
-		Search:  flagArgs[1],
-		Replace: flagArgs[2],
+		Subject: inputArgs[0],
+		Search:  inputArgs[1],
+		Replace: inputArgs[2],
 	}
 
 	fileStat, err := os.Stat(args.Subject)
@@ -69,5 +82,5 @@ func ReadArgs(stdin *os.File, flagArgs []string) Args {
 		args.File = fileArg{Path: args.Subject}
 	}
 
-	return args
+	return args, nil
 }
