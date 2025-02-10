@@ -14,7 +14,8 @@ func TestReplaceAllStringOrPattern_LiteralString(t *testing.T) {
 	search := "text"
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := ReplaceAllStringOrPattern(search, replace, subject, true, false)
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": true}
+	result := ReplaceAllStringOrPattern(search, replace, subject, flags)
 
 	want := regexp.MustCompile("this is some replacement, this is some other replacement")
 
@@ -27,7 +28,8 @@ func TestReplaceAllStringOrPattern_RegEx(t *testing.T) {
 	searchPattern := "t.xt"
 	replace := "replacement"
 	subject := "this is some text"
-	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, false, false)
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
+	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, flags)
 
 	want := regexp.MustCompile("this is some replacement")
 
@@ -40,7 +42,8 @@ func TestReplaceAllStringOrPattern_RegExIgnoringCase(t *testing.T) {
 	searchPattern := "Text"
 	replace := "replacement"
 	subject := "this is some text"
-	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, false, true)
+	flags := map[string]bool{"insensitive": true, "confirm": false, "literal": false}
+	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, flags)
 
 	want := regexp.MustCompile("this is some replacement")
 
@@ -53,7 +56,8 @@ func TestReplaceAllStringOrPattern_RegExCapturingGroup(t *testing.T) {
 	searchPattern := "(text)"
 	replace := "other $1"
 	subject := "this is some text"
-	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, false, false)
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
+	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, flags)
 
 	want := regexp.MustCompile("this is some other text")
 
@@ -66,7 +70,8 @@ func TestReplaceAllStringOrPattern_RegExNotMatch(t *testing.T) {
 	searchPattern := "<fooo>"
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, false, false)
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": true}
+	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, flags)
 
 	want := regexp.MustCompile("this is some text, this is some other text")
 
@@ -79,7 +84,8 @@ func TestReplaceAllStringOrPattern_LiteralNotMatch(t *testing.T) {
 	searchPattern := "<fooo>"
 	replace := "replacement"
 	subject := "this is some text, this is some other text"
-	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, true, false)
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": true}
+	result := ReplaceAllStringOrPattern(searchPattern, replace, subject, flags)
 
 	want := regexp.MustCompile("this is some text, this is some other text")
 
@@ -123,8 +129,9 @@ func TestReplaceInFile_SingleLine(t *testing.T) {
 	defer outputFile.Close()
 
 	args := input.Args{ Replace: "replacement", Search: "text" }
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
-	err := ReplaceInFile(inputFile, outputFile, args, false, false)
+	err := ReplaceInFile(inputFile, outputFile, args, flags)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -152,8 +159,9 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 	defer outputFile.Close()
 
 	args := input.Args{ Replace: "replacement", Search: "text" }
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
-	err := ReplaceInFile(inputFile, outputFile, args, false, false)
+	err := ReplaceInFile(inputFile, outputFile, args, flags)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -181,8 +189,9 @@ func TestReplaceInFile_NotFound(t *testing.T) {
 	defer outputFile.Close()
 
 	args := input.Args{ Replace: "replacement", Search: "foo" }
+	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
-	err := ReplaceInFile(inputFile, outputFile, args, false, false)
+	err := ReplaceInFile(inputFile, outputFile, args, flags)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -206,39 +215,42 @@ func TestReplaceStringRange(t *testing.T) {
 		name string
 		args input.Args
 		stringRange [2]int
-		literalFlag bool
-		insensitiveFlag bool
+		flags map[string]bool
 		want string
 	}{
 		{
 			name: "string range starting in 0",
 			args: input.Args{Subject: "this is some text, this is the rest of the text", Search: "text", Replace: "replacement"},
 			stringRange: [2]int{0, 17},
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 			want: "this is some replacement, this is the rest of the text",
 		},
 		{
 			name: "string range starting and ending in the middle",
 			args: input.Args{Subject: "this is some text, this is the rest of the text", Search: "this", Replace: "that"},
 			stringRange: [2]int{17, 35},
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 			want: "this is some text, that is the rest of the text",
 		},
 		{
 			name: "string range starting in the middle and ending in the end",
 			args: input.Args{Subject: "this is some text, this is the rest of the text", Search: "text", Replace: "replacement"},
 			stringRange: [2]int{42, 47},
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 			want: "this is some text, this is the rest of the replacement",
 		},
 		{
 			name: "no match",
 			args: input.Args{Subject: "this is some text, this is the rest of the text", Search: "banana", Replace: "replacement"},
 			stringRange: [2]int{42, 47},
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 			want: "this is some text, this is the rest of the text",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := ReplaceStringRange(tc.args, tc.stringRange, tc.literalFlag, tc.insensitiveFlag)
+			result := ReplaceStringRange(tc.args, tc.stringRange, tc.flags)
 
 			if result != tc.want {
 				t.Errorf("ReplaceMatch() = %s, want %s", result, tc.want)

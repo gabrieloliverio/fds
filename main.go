@@ -13,6 +13,9 @@ import (
 func main() {
 	var (
 		literalFlag, insensitiveFlag, confirmFlag bool
+		inputFile, tmpFile                        *os.File
+		inputFilePath                             string
+		err                                       error
 	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
@@ -28,18 +31,16 @@ func main() {
 
 	flag.Parse()
 
-	var inputFile, tmpFile *os.File
-	var inputFilePath string
-	var err error
+	flags := map[string]bool{"confirm": confirmFlag, "insensitive": insensitiveFlag, "literal": literalFlag}
 
 	args, err := input.ReadArgs(os.Stdin, flag.Args())
 	check(err)
 
-	err = input.Validate(args, literalFlag, insensitiveFlag, confirmFlag)
+	err = input.Validate(args, flags)
 	check(err)
 
 	if args.File.Path == "" {
-		fmt.Print(replace.ReplaceAllStringOrPattern(args.Search, args.Replace, args.Subject, literalFlag, insensitiveFlag))
+		fmt.Print(replace.ReplaceAllStringOrPattern(args.Search, args.Replace, args.Subject, flags))
 
 		return
 	}
@@ -55,9 +56,9 @@ func main() {
 	defer tmpFile.Close()
 
 	if confirmFlag {
-		err = replace.ConfirmAndReplace(inputFile, tmpFile, os.Stdin, args, literalFlag, insensitiveFlag, confirmFlag)
+		err = replace.ConfirmAndReplace(inputFile, tmpFile, os.Stdin, args, flags)
 	} else {
-		err = replace.ReplaceInFile(inputFile, tmpFile, args, literalFlag, insensitiveFlag)
+		err = replace.ReplaceInFile(inputFile, tmpFile, args, flags)
 	}
 
 	check(err)

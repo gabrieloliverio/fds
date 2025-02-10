@@ -11,8 +11,7 @@ func TestFindStringOrPattern(t *testing.T) {
 		subject string
 		search string
 		replace string
-		literalFlag bool
-		insensitiveFlag bool
+		flags map[string]bool
 		want []MatchString
 	}{
 		{
@@ -20,6 +19,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "foo",
 			replace: "replacement",
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{},
 		},
@@ -28,6 +28,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "text",
 			replace: "replacement",
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -45,6 +46,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "this is some text and that's it",
 			replace: "replacement",
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -62,6 +64,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "this is some unnecessarily long text, and now I ran out of criativity",
 			replace: "replacement",
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -79,6 +82,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "some random 20-char text some random 20-char",
 			replace: "replacement",
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -96,7 +100,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "some random 20-char text some random 20-char",
 			replace: "$1",
-			literalFlag: true,
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": true},
 
 			want: []MatchString{
 			    {
@@ -114,7 +118,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "(text)",
 			subject: "some random 20-char text some random 20-char",
 			replace: "other $1",
-			insensitiveFlag: true,
+			flags: map[string]bool{"insensitive": true, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -132,7 +136,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "TEXT",
 			subject: "some random 20-char text some random 20-char",
 			replace: "replacement",
-			insensitiveFlag: true,
+			flags: map[string]bool{"insensitive": true, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -150,7 +154,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: ".ext",
 			subject: "some random 20-char text some random 20-char",
 			replace: "replacement",
-			insensitiveFlag: false,
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -168,6 +172,7 @@ func TestFindStringOrPattern(t *testing.T) {
 			search: "text",
 			subject: "this is one text, this is another text, this is yet another text",
 			replace: "replacement",
+			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -200,7 +205,7 @@ func TestFindStringOrPattern(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := FindStringOrPattern(tc.search, tc.replace, tc.subject, tc.literalFlag, tc.insensitiveFlag, 20)
+			result := FindStringOrPattern(tc.search, tc.replace, tc.subject, tc.flags, 20)
 			
 			if !reflect.DeepEqual(result, tc.want) {
 				t.Errorf("FindStringOrPattern() = %+v, want %+v", result, tc.want)

@@ -35,14 +35,14 @@ func ConfirmMatch(match MatchString, filename string, stdin *os.File) (rune, err
 	return ret, nil
 }
 
-func FindStringOrPattern(search, replace, subject string, literalFlag, insensitiveFlag bool, bytesInDiff int) []MatchString {
+func FindStringOrPattern(search, replace, subject string, flags map[string]bool, bytesInDiff int) []MatchString {
 	searchWithModifiers := search 
 
-	if literalFlag {
+	if flags["literal"] {
 		searchWithModifiers = regexp.QuoteMeta(search)
 	}
 
-	if insensitiveFlag {
+	if flags["insensitive"] {
 		searchWithModifiers = "(?i)" + search
 	}
 
