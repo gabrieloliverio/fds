@@ -156,7 +156,7 @@ func TestReadArgs_Stdin(t *testing.T) {
 	}
 }
 
-func TestReadArgs_Stdin_No_Parameters_Return_Error(t *testing.T) {
+func TestReadArgs_Stdin_NoParametersReturnError(t *testing.T) {
     stdin := createTempFile(os.TempDir(), "my subject", t)
 
 	_, err := ReadArgs(stdin, []string{})
@@ -166,18 +166,17 @@ func TestReadArgs_Stdin_No_Parameters_Return_Error(t *testing.T) {
 	}
 }
 
-func TestReadArgs_PositionalArguments(t *testing.T) {
+func TestReadArgs_FileNotFound(t *testing.T) {
     stdin := createTempFile(os.TempDir(), "", t)
 
-	want := Args{Subject: "my subject", Search: "search", Replace: "replace"}
-	result, _ := ReadArgs(stdin, []string{"my subject", "search", "replace"})
+	_, err := ReadArgs(stdin, []string{"search", "replace", "file_not_found"})
 
-	if result != want {
-		t.Errorf(`ReadArgs() = "%+v", want "%+v"`, result, want)
+	if err == nil {
+		t.Errorf(`ReadArgs() expected error, did not get error"`)
 	}
 }
 
-func TestReadArgs_PositionalArguements_No_Parameters_Return_Error(t *testing.T) {
+func TestReadArgs_NoParametersReturnError(t *testing.T) {
     stdin := createTempFile(os.TempDir(), "", t)
 
 	_, err := ReadArgs(stdin, []string{})

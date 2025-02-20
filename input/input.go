@@ -8,9 +8,8 @@ import (
 )
 
 const Usage = `Usage:
-	fds [ options ] subject search_pattern  replace
 	echo subject | fds [ options ] search_pattern replace
-	fds [ options ] ./file search_pattern replace
+	fds [ options ] search_pattern replace ./file
 
 Options:
 
@@ -71,16 +70,20 @@ func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
 	}
 
 	args := Args{
-		Subject: inputArgs[0],
-		Search:  inputArgs[1],
-		Replace: inputArgs[2],
+		Search:  inputArgs[0],
+		Replace: inputArgs[1],
+		Subject: inputArgs[2],
 	}
 
 	fileStat, err := os.Stat(args.Subject)
 
-	if err == nil && !fileStat.IsDir() {
-		args.File = fileArg{Path: args.Subject}
+	if err != nil {
+		return Args{}, NewInvalidArgumentsErrorFileNotFound(args.Subject)
 	}
 
-	return args, nil
-}
+		if !fileStat.IsDir() {
+			args.File = fileArg{Path: args.Subject}
+		}
+
+		return args, nil
+	}
