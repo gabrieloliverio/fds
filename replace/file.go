@@ -76,6 +76,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 	var err error
 	var confirmedAll, confirmedQuit bool
 	var replacer = NewReplacer(r.flags)
+	var lineNumber int
 
 	if inputFileStat, _ := r.inputFile.Stat(); inputFileStat.Size() == 0 {
 		return nil
@@ -86,6 +87,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 
 	for {
 		line, err := reader.ReadString('\n')
+		lineNumber++
 
 		if err != nil && err != io.EOF {
 			return fmt.Errorf("Error while reading file: %s", err)
@@ -102,7 +104,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 		if !confirmedAll && !confirmedQuit  {
 			matches := match.FindStringOrPattern(search, replace, line, r.flags, 50)
 
-			line, confirmedAll, confirmedQuit = r.confirmMatches(matches, line, search, replace, stdin)
+			line, confirmedAll, confirmedQuit = r.confirmMatches(matches, line, search, replace, lineNumber, stdin)
 		}
 
 		_, errWrite := writer.WriteString(line)
@@ -117,7 +119,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 	return err
 }
 
-func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, replace string, stdin *os.File) (replacedLine string, confirmedAll, confirmedQuit bool) {
+func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, replace string, lineNumber int, stdin *os.File) (replacedLine string, confirmedAll, confirmedQuit bool) {
 	var answer rune
 	var err error
 	
@@ -137,7 +139,7 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 		if confirmedAll {
 			answer = input.ConfirmYes
 		} else {
-			answer, err = match.ConfirmMatch(thisMatch, r.inputFile.Name(), stdin)
+			answer, err = match.ConfirmMatch(thisMatch, r.inputFile.Name(), lineNumber, stdin)
 		}
 
 		if err != nil {

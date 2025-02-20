@@ -14,17 +14,18 @@ type MatchString struct {
 	Replace string
 	Before string
 	After string
+	LineNumber int
 
 	IndexStart int
 	IndexEnd int
 }
 
-func ConfirmMatch(match MatchString, filename string, stdin *os.File) (rune, error) {
+func ConfirmMatch(match MatchString, filename string, lineNumber int, stdin *os.File) (rune, error) {
     red := color.New(color.FgHiRed, color.Bold, color.Italic)
     green := color.New(color.FgHiGreen, color.Bold)
 
-    fmt.Printf("File %s\n", filename)
-    fmt.Printf("%s%s%s%s\n", match.Before, red.Sprint(match.Search), green.Sprint(match.Replace), match.After)
+    fmt.Printf("File\t%s\n", filename)
+    fmt.Printf("%d\t%s%s%s%s\n", lineNumber, match.Before, red.Sprint(match.Search), green.Sprint(match.Replace), match.After)
 
 	ret, err := input.Confirm(stdin)
 
