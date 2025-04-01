@@ -18,8 +18,9 @@ Options:
 	-c, --confirm 		Confirm each substitution
 `
 
-type fileArg struct {
+type pathArg struct {
 	Path string
+	IsDir bool
 }
 
 type Args struct {
@@ -27,7 +28,7 @@ type Args struct {
 	Search  string
 	Replace string
 
-	File fileArg
+	File pathArg
 }
 
 func Validate(args Args, flags map[string] bool) error {
@@ -81,9 +82,11 @@ func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
 		return Args{}, NewInvalidArgumentsErrorFileNotFound(args.Subject)
 	}
 
-		if !fileStat.IsDir() {
-			args.File = fileArg{Path: args.Subject}
-		}
-
-		return args, nil
+	if fileStat.IsDir() {
+		args.File = pathArg{Path: args.Subject, IsDir: true}
+	} else {
+		args.File = pathArg{Path: args.Subject}
 	}
+
+	return args, nil
+}
