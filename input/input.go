@@ -10,6 +10,8 @@ import (
 const Usage = `Usage:
 	echo subject | fds [ options ] search_pattern replace
 	fds [ options ] search_pattern replace ./file
+	fds [ options ] search_pattern replace ~/directory
+	fds [ options ] search_pattern replace ~/directory/**/somepattern*
 
 Options:
 
@@ -19,8 +21,16 @@ Options:
 `
 
 type pathArg struct {
-	Path string
-	IsDir bool
+	Value string
+	fileInfo os.FileInfo
+}
+
+func (p pathArg) IsDir() bool {
+	return p.fileInfo.IsDir()
+}
+
+func (p pathArg) IsFile() bool {
+	return !p.fileInfo.IsDir()
 }
 
 type Args struct {
@@ -28,7 +38,7 @@ type Args struct {
 	Search  string
 	Replace string
 
-	File pathArg
+	Path pathArg
 }
 
 func Validate(args Args, flags map[string] bool) error {
@@ -42,7 +52,7 @@ func Validate(args Args, flags map[string] bool) error {
 		return NewLiteralInsensitiveError()
 	}
 
-	if flags["confirm"] && args.File.Path == "" {
+	if flags["confirm"] && args.Path.Value == "" {
 		return NewConfirmNotOnFileError()
 	}
 
@@ -82,11 +92,7 @@ func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
 		return Args{}, NewInvalidArgumentsErrorFileNotFound(args.Subject)
 	}
 
-	if fileStat.IsDir() {
-		args.File = pathArg{Path: args.Subject, IsDir: true}
-	} else {
-		args.File = pathArg{Path: args.Subject}
-	}
+	args.Path = pathArg{Value: args.Subject, fileInfo: fileStat}
 
 	return args, nil
 }

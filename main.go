@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
+	"log"
 	"os"
+	"path/filepath"
 
-	"github.com/gabrieloliverio/fds/glob"
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/replace"
 )
@@ -14,6 +16,8 @@ func main() {
 	var (
 		literalFlag, insensitiveFlag, confirmFlag bool
 		err                                       error
+		defaultAnswer                             = input.ConfirmAnswer('n')
+		confirmAnswer                             = &defaultAnswer
 	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
@@ -37,7 +41,7 @@ func main() {
 	err = input.Validate(args, flags)
 	check(err)
 
-	if args.File.Path == "" {
+	if args.Path.Value == "" {
 		replacer := replace.NewReplacer(flags)
 
 		fmt.Print(replacer.Replace(args.Subject, args.Search, args.Replace))
@@ -45,28 +49,19 @@ func main() {
 		return
 	}
 
-	if !args.File.IsDir {
-		err := replaceInFile(args.File.Path, args, flags, nil)
+	if args.Path.IsFile() {
+
+		err := replaceInFile(args.Path.Value, args, flags, confirmAnswer)
 		check(err)
 
 		return
 	}
 
-	filepaths, err := glob.GetFilesInDir(args.File.Path)
+	files, err := getFilesInDir(args.Path.Value)
 	check(err)
 
-	var defaultAnswer = input.ConfirmAnswer('n')
-	var confirmAnswer *input.ConfirmAnswer = &defaultAnswer
-
-	for _, file := range filepaths {
-		err = replaceInFile(file, args, flags, confirmAnswer)
-
-		check(err)
-
-		if rune(*confirmAnswer) == input.ConfirmQuit {
-			break
-		}
-	}
+	err = replaceInFiles(files, args, flags, confirmAnswer)
+	check(err)
 }
 
 func replaceInFile(path string, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
@@ -87,6 +82,45 @@ func replaceInFile(path string, args input.Args, flags map[string]bool, confirmA
 	check(err)
 
 	return err
+}
+
+func replaceInFiles(files []string, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
+	for _, file := range files {
+		err := replaceInFile(file, args, flags, confirmAnswer)
+
+		if err != nil {
+			return err
+		}
+
+		if rune(*confirmAnswer) == input.ConfirmQuit {
+			break
+		}
+	}
+
+	return nil
+}
+
+func getFilesInDir(root string) ([]string, error) {
+	fileSystem := os.DirFS(root)
+	var filepaths []string
+
+	err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if !d.IsDir() {
+			filepaths = append(filepaths, filepath.Join(root, path))
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return filepaths, nil
 }
 
 func check(err error) {

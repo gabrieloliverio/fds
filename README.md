@@ -33,8 +33,8 @@ $ fds text replacement ./a_directory            # Reading directory
 - [x] Interactive mode
 - [x] Include line numbers
 - [x] Directories
-- [ ] Multiple files and directories
-- [ ] Glob
+- [x] Glob
+- [ ] Multiple files, directories and/or globs
 - [ ] Ignore files listed in .gitignore
 - [ ] Accept --ignore-glob
 - [ ] Catch interrupt signal to clean up temp files
