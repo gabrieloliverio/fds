@@ -2,11 +2,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -61,7 +62,7 @@ func readArgs() args {
 func main() {
 	flag.Parse()
 
-	var inputFile *os.File
+	var inputFile, tmpFile *os.File
 	var err error
 
 	args := readArgs()
@@ -79,13 +80,21 @@ func main() {
 	}
 
 	fileStat, _ := os.Stat(args.file.path)
-	inputFile, err = os.OpenFile(args.file.path, os.O_RDWR, fileStat.Mode())
+	inputFile, err = os.OpenFile(args.file.path, os.O_RDONLY, fileStat.Mode())
 
 	check(err)
 
 	defer inputFile.Close()
 
-	err = replaceInFileChunks(inputFile, args)
+	tmpFile, err = os.CreateTemp("", filepath.Base(inputFile.Name()))
+
+	check(err)
+
+	defer tmpFile.Close()
+
+	err = replaceInFile(inputFile, tmpFile, args)
+
+	err = os.Rename(tmpFile.Name(), inputFile.Name())
 
 	check(err)
 }
@@ -118,8 +127,8 @@ func readFile(file *os.File) string {
 	return content
 }
 
-func replaceInFileChunks(file *os.File, args args) error {
-	inputFileStat, _ := file.Stat()
+func replaceInFile(inputFile, outputFile *os.File, args args) error {
+	inputFileStat, _ := inputFile.Stat()
 	searchPattern := regexp.MustCompile(args.search)
 	var err error
 
@@ -127,36 +136,26 @@ func replaceInFileChunks(file *os.File, args args) error {
 		return nil
 	}
 
-	scanner := bufio.NewScanner(file)
-	var bs []byte
-	buf := bytes.NewBuffer(bs)
+	reader := bufio.NewReader(inputFile)
+	writer := bufio.NewWriter(outputFile)
 
-	var text string
-	for scanner.Scan() {
-		text = scanner.Text()
+	for {
+		line, err := reader.ReadString('\n')
 
-		replaced := replacePattern(searchPattern, args.replace, text)
+		if err != nil && err == io.EOF {
+			break
+		}
 
-		_, err = buf.WriteString(replaced + "\n")
+		replaced := replacePattern(searchPattern, args.replace, line)
+
+		_, err = writer.WriteString(replaced)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	err = file.Truncate(0)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = file.Seek(0, 0)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = buf.WriteTo(file)
+	writer.Flush()
 
 	return err
 }
