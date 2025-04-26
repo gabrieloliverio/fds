@@ -1,14 +1,22 @@
 package input
 
 import (
-	"bufio"
-	"errors"
-	"flag"
-	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
 )
+
+const Usage = `Usage:
+	fds [ options ] subject search_pattern  replace
+	echo subject | fds [ options ] search_pattern replace
+	fds [ options ] ./file search_pattern replace
+
+Options:
+
+	-l, --literal 		Treat pattern as a regular string instead of as Regular Expression
+	-i, --insensitive 	Ignore case on search
+`
 
 type fileArg struct {
 	Path string
@@ -22,35 +30,37 @@ type Args struct {
 	File fileArg
 }
 
-func Validate(a Args, usage string, literalMode, insensitiveMode bool) error {
-	usageErr := errors.New(usage)
-
+func Validate(a Args, literalMode, insensitiveMode bool) error {
 	_, err := regexp.Compile(a.Search)
 
 	if !literalMode && err != nil {
-		return fmt.Errorf("%s\n%s\n", usage, "[ search_pattern ] is not a valid Regular Expression")
+		return NewInvalidRegExpError()
 	}
 
 	if literalMode && insensitiveMode {
-		return fmt.Errorf("%s\n%s\n", usage, "[ -l, --literal ] cannot be used along with [ -i, --insensitive ]")
+		return NewLiteralInsensitiveError()
 	}
 
 	if strings.Trim(a.Replace, " ") == "" || strings.Trim(a.Subject, " ") == "" || strings.Trim(a.Search, " ") == "" {
-		return usageErr
+		return NewInvalidArgumentsError()
 	}
 
 	return nil
 }
 
-func ReadArgs() Args {
-	if subject := readFile(os.Stdin); subject != "" {
-		return Args{Subject: subject, Search: flag.Arg(0), Replace: flag.Arg(1)}
+func ReadArgs(stdin *os.File, flagArgs []string) Args {
+	stdinStat, _ := stdin.Stat()
+
+	if stdinStat.Size() > 0 {
+		stdin, _ := io.ReadAll(stdin)
+
+		return Args{Subject: string(stdin), Search: flagArgs[0], Replace: flagArgs[1]}
 	}
 
 	args := Args{
-		Subject: flag.Arg(0),
-		Search:  flag.Arg(1),
-		Replace: flag.Arg(2),
+		Subject: flagArgs[0],
+		Search:  flagArgs[1],
+		Replace: flagArgs[2],
 	}
 
 	fileStat, err := os.Stat(args.Subject)
@@ -60,21 +70,4 @@ func ReadArgs() Args {
 	}
 
 	return args
-}
-
-func readFile(file *os.File) string {
-	stat, _ := file.Stat()
-
-	if stat.Size() == 0 {
-		return ""
-	}
-
-	scanner := bufio.NewScanner(file)
-	var content string
-
-	for scanner.Scan() {
-		content += scanner.Text()
-	}
-
-	return content
 }

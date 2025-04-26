@@ -1,6 +1,9 @@
 package input
 
 import (
+	"io"
+	"os"
+	"path"
 	"testing"
 )
 
@@ -15,6 +18,26 @@ type test []struct{
     name string
     input validationInput
     expectError bool
+}
+
+func createTempFile(tempDir, inputContent string, t *testing.T) *os.File {
+	var file *os.File
+
+	file, err := os.Create(path.Join(tempDir, "input"))
+
+	if err != nil {
+		t.Fatalf("Failed to open input file")
+	}
+
+	_, err = file.WriteString(inputContent)
+
+	if err != nil {
+		t.Fatalf("Failed to write input file")
+	}
+
+	file.Seek(0, io.SeekStart)
+
+	return file
 }
 
 func TestValidate(t *testing.T) {
@@ -94,7 +117,6 @@ func TestValidate(t *testing.T) {
         t.Run(tc.name, func(t *testing.T) {
             result := Validate(
                 tc.input.args,
-                tc.input.usage,
                 tc.input.literalMode,
                 tc.input.insensitiveMode,
             )
@@ -108,6 +130,27 @@ func TestValidate(t *testing.T) {
             }
         })
     }
+}
 
+func TestReadArgs_Stdin(t *testing.T) {
+    stdin := createTempFile(os.TempDir(), "my subject", t)
+
+	want := Args{Subject: "my subject", Search: "search", Replace: "replace"}
+	result := ReadArgs(stdin, []string{"search", "replace"})
+
+	if result != want {
+		t.Errorf(`ReadArgs() = "%+v", want "%+v"`, result, want)
+	}
+}
+
+func TestReadArgs_PositionalArguments(t *testing.T) {
+    stdin := createTempFile(os.TempDir(), "", t)
+
+	want := Args{Subject: "my subject", Search: "search", Replace: "replace"}
+	result := ReadArgs(stdin, []string{"my subject", "search", "replace"})
+
+	if result != want {
+		t.Errorf(`ReadArgs() = "%+v", want "%+v"`, result, want)
+	}
 }
 
