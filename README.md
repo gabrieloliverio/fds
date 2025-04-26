@@ -1,3 +1,5 @@
+[![Go](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml/badge.svg)](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml)
+
 # `fds`
 
 Modern and opinionated find/replace CLI programme. Short version of **F**in**d** and **S**ubstitute, read as /fɔ.dɐ.s(ɨ)/ :).

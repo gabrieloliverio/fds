@@ -1,6 +1,3 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
 name: Go
 
 on:
@@ -10,7 +7,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -26,17 +22,34 @@ jobs:
 
     - name: Test
       run: |
-        mkdir -p coverage
-        go test -coverprofile=coverage/coverage.out ./...
+        go test -coverprofile=coverage.out ./...
+
+    - name: Upload artifact coverage.out
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage
+        path: coverage.out
 
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0  
+
+      - name: Download coverage.out
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+
+      - run: ls -la coverage.out
+
       - name: SonarQubeScan
         uses: SonarSource/sonarqube-scan-action@v4
         env: 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.go.coverage.reportPaths=coverage.out
