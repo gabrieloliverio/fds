@@ -33,6 +33,7 @@ $ fds dir/**/file.* text replacement            # Glob
 - [x] Support for string-literal mode
 - [x] Support for case-insensitive mode
 - [x] Interactive mode
+- [ ] Include line numbers
 - [ ] Multiple files, directories and Glob
 - [ ] Ignore files listed in .gitignore
 - [ ] Accept --ignore-glob

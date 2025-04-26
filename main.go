@@ -40,7 +40,9 @@ func main() {
 	check(err)
 
 	if args.File.Path == "" {
-		fmt.Print(replace.ReplaceAllStringOrPattern(args.Search, args.Replace, args.Subject, flags))
+		replacer := replace.NewReplacer(flags)
+
+		fmt.Print(replacer.Replace(args.Subject, args.Search, args.Replace))
 
 		return
 	}
@@ -55,11 +57,9 @@ func main() {
 
 	defer tmpFile.Close()
 
-	if confirmFlag {
-		err = replace.ConfirmAndReplace(inputFile, tmpFile, os.Stdin, args, flags)
-	} else {
-		err = replace.ReplaceInFile(inputFile, tmpFile, args, flags)
-	}
+	replacer := replace.NewFileReplacer(inputFile, tmpFile, flags)
+
+	err = replacer.ReplaceInFile(args.Search, args.Replace, os.Stdin)
 
 	check(err)
 
