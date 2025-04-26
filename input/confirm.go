@@ -9,6 +9,7 @@ import (
 
 const (
     confirmText = "[y]es [n]o [a]ll q[uit]: "
+    enter = 10
 
     ConfirmYes = 'y'
     ConfirmNo = 'n'
@@ -16,22 +17,26 @@ const (
     ConfirmQuit = 'q'
 )
 
-func Confirm(stdin *os.File) (rune, error) {
-    valid := []rune{'y', 'n', 'a', 'q'}
+type ConfirmAnswer rune
 
+func Confirm(stdin *os.File) (rune, error) {
+    var input rune
+    var err error
+
+    valid := []rune{'y', 'n', 'a', 'q'}
     reader := bufio.NewReader(stdin)
 
-    // TODO: how to read a rune without pressing <ENTER>?
-    fmt.Print(confirmText)
-    input, _, err := reader.ReadRune()
+    for !slices.Contains(valid, input) {
+        if input != enter {
+            fmt.Print(confirmText)
+        }
 
-    if err != nil {
-        return 0, err
+        input, _, err = reader.ReadRune()
+
+        if err != nil {
+            return 0, err
+        }
     }
 
-    if slices.Contains(valid, input) {
-        return input, nil
-    }
-
-    return 0, NewInvalidConfirmInputError(input)
+    return input, nil
 }

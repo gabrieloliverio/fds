@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/match"
@@ -25,12 +26,14 @@ func NewFileReplacer(inputFile, outputFile *os.File, flags map[string]bool) File
 	}
 }
 
-/**
+/*
  * ReplaceInFile replaces a given pattern when found in `inputFile`. Lines are written into `outputFile`
  */
-func (r FileReplacer) ReplaceInFile(search, replace string, stdin *os.File) error {
+func (r FileReplacer) ReplaceInFile(search, replace string, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
 	if r.flags["confirm"] {
-		return r.confirmAndReplace(search, replace, stdin)
+		err := r.confirmAndReplace(search, replace, stdin, confirmAnswer)
+
+		return err
 	}
 
 	return r.replaceAll(search, replace)
@@ -72,11 +75,13 @@ func (r FileReplacer) replaceAll(search, replace string) error {
 
 }
 
-func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) error {
-	var err error
-	var confirmedAll, confirmedQuit bool
+func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
 	var replacer = NewReplacer(r.flags)
 	var lineNumber int
+	var confirmedAll, confirmedQuit bool
+
+	// feedback confirmedAll that propagated all the way back to the main function
+	confirmedAll = *confirmAnswer == input.ConfirmAll 
 
 	if inputFileStat, _ := r.inputFile.Stat(); inputFileStat.Size() == 0 {
 		return nil
@@ -93,10 +98,6 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 			return fmt.Errorf("Error while reading file: %s", err)
 		}
 
-		if err != nil && err == io.EOF {
-			break
-		}
-
 		if confirmedAll {
 			line = replacer.Replace(line, search, replace)
 		}
@@ -104,7 +105,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 		if !confirmedAll && !confirmedQuit  {
 			matches := match.FindStringOrPattern(search, replace, line, r.flags, 50)
 
-			line, confirmedAll, confirmedQuit = r.confirmMatches(matches, line, search, replace, lineNumber, stdin)
+			line = r.confirmMatches(matches, line, search, replace, lineNumber, stdin, confirmAnswer)
 		}
 
 		_, errWrite := writer.WriteString(line)
@@ -112,18 +113,25 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File) 
 		if errWrite != nil  {
 			return fmt.Errorf("Error while writing temporary file: %s", err)
 		}
+
+		if err != nil && err == io.EOF {
+			break
+		}
 	}
 
 	writer.Flush()
 
-	return err
+	return nil
 }
 
-func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, replace string, lineNumber int, stdin *os.File) (replacedLine string, confirmedAll, confirmedQuit bool) {
+func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, replace string, lineNumber int, stdin *os.File, confirmAnswer *input.ConfirmAnswer) string {
 	var answer rune
 	var err error
+
+	confirmedQuit := rune(*confirmAnswer) == input.ConfirmQuit
+	confirmedAll := rune(*confirmAnswer) == input.ConfirmAll
 	
-	replacedLine = line
+	replacedLine := line
 
 	for i, thisMatch := range matches {
 		if confirmedQuit {
@@ -140,6 +148,7 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 			answer = input.ConfirmYes
 		} else {
 			answer, err = match.ConfirmMatch(thisMatch, r.inputFile.Name(), lineNumber, stdin)
+			*confirmAnswer = input.ConfirmAnswer(answer)
 		}
 
 		if err != nil {
@@ -148,19 +157,40 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 
 		switch answer {
 		case input.ConfirmYes:
-			replacedLine = r.LineReplacer.ReplaceStringRange(line, search, replace, stringRange)
+			replacedLine = r.LineReplacer.ReplaceStringRange(replacedLine, search, replace, stringRange)
 		case input.ConfirmNo:
 			// Nothing to do
 		case input.ConfirmAll:
-			replacedLine = r.LineReplacer.ReplaceStringRange(line, search, replace, stringRange)
+			replacedLine = r.LineReplacer.ReplaceStringRange(replacedLine, search, replace, stringRange)
 			confirmedAll = true
 		default:
-			// ConfirmedQuit
-			// TODO: copy the remaining lines to tmp file and flush. Maybe next iteration?
 			confirmedQuit = true
 		}
 	}
 
-	return
+	return replacedLine
 }
 
+func resolveInputFile(path string) (*os.File, error) {
+	fileStat, _ := os.Lstat(path)
+	inputFilePath := path
+
+	if fileStat.Mode().Type() == os.ModeSymlink.Type() {
+		inputFilePath, _ = filepath.EvalSymlinks(path)
+		inputFilePath, _ = filepath.Abs(inputFilePath)
+	}
+
+	return os.OpenFile(inputFilePath, os.O_RDONLY, fileStat.Mode())
+}
+
+func OpenInputAndTempFile(inputPath string) (inputFile, tmpFile *os.File, err error) {
+	inputFile, err = resolveInputFile(inputPath)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tmpFile, err = os.CreateTemp("", filepath.Base(inputPath))
+
+	return
+}

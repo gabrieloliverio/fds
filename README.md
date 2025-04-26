@@ -17,10 +17,8 @@ Modern and opinionated find/replace CLI programme. Short version of **F**in**d**
 
 ```
 $ echo "some text" | fds text replacement       # Using stdin
-$ fds "some text" text replacement              # Using positional parameters
-$ fds ./afile text replacement                  # Reading file
-$ fds ./adir text replacement                   # Reading directory
-$ fds dir/**/file.* text replacement            # Glob
+$ fds text replacement ./a_file                 # Reading file
+$ fds text replacement ./a_directory            # Reading directory
 ```
 
 # Roadmap
@@ -34,7 +32,10 @@ $ fds dir/**/file.* text replacement            # Glob
 - [x] Support for case-insensitive mode
 - [x] Interactive mode
 - [x] Include line numbers
-- [ ] Multiple files, directories and Glob
+- [x] Directories
+- [ ] Multiple files and directories
+- [ ] Glob
 - [ ] Ignore files listed in .gitignore
 - [ ] Accept --ignore-glob
+- [ ] Catch interrupt signal to clean up temp files
 - [ ] Concurrency when reading/writing several files

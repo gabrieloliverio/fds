@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/gabrieloliverio/fds/glob"
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/replace"
 )
@@ -13,8 +13,6 @@ import (
 func main() {
 	var (
 		literalFlag, insensitiveFlag, confirmFlag bool
-		inputFile, tmpFile                        *os.File
-		inputFilePath                             string
 		err                                       error
 	)
 
@@ -47,36 +45,48 @@ func main() {
 		return
 	}
 
-	inputFile, err = getInputFile(args)
+	if !args.File.IsDir {
+		err := replaceInFile(args.File.Path, args, flags, nil)
+		check(err)
+
+		return
+	}
+
+	filepaths, err := glob.GetFilesInDir(args.File.Path)
+	check(err)
+
+	var defaultAnswer = input.ConfirmAnswer('n')
+	var confirmAnswer *input.ConfirmAnswer = &defaultAnswer
+
+	for _, file := range filepaths {
+		err = replaceInFile(file, args, flags, confirmAnswer)
+
+		check(err)
+
+		if rune(*confirmAnswer) == input.ConfirmQuit {
+			break
+		}
+	}
+}
+
+func replaceInFile(path string, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
+	inputFile, tmpFile, err := replace.OpenInputAndTempFile(path)
+
 	check(err)
 
 	defer inputFile.Close()
-
-	tmpFile, err = os.CreateTemp("", filepath.Base(inputFilePath))
-	check(err)
-
 	defer tmpFile.Close()
 
 	replacer := replace.NewFileReplacer(inputFile, tmpFile, flags)
 
-	err = replacer.ReplaceInFile(args.Search, args.Replace, os.Stdin)
+	err = replacer.ReplaceInFile(args.Search, args.Replace, os.Stdin, confirmAnswer)
 
 	check(err)
 
 	err = os.Rename(tmpFile.Name(), inputFile.Name())
 	check(err)
-}
 
-func getInputFile(args input.Args) (*os.File, error) {
-	fileStat, _ := os.Lstat(args.File.Path)
-	inputFilePath := args.File.Path
-
-	if fileStat.Mode().Type() == os.ModeSymlink.Type() {
-		inputFilePath, _ = filepath.EvalSymlinks(args.File.Path)
-		inputFilePath, _ = filepath.Abs(inputFilePath)
-	}
-
-	return os.OpenFile(inputFilePath, os.O_RDONLY, fileStat.Mode())
+	return err
 }
 
 func check(err error) {
