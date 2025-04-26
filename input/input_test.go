@@ -73,7 +73,7 @@ func TestValidate(t *testing.T) {
         {
             name: "Valid subject (file content), search, replace. Confirm flag true",
             input: validationInput{
-                args: Args{File: pathArg{Path: "./foo"}, Subject: "Foo", Search: "Foo", Replace: "Baz"},
+                args: Args{Path: pathArg{Value: "./foo"}, Subject: "Foo", Search: "Foo", Replace: "Baz"},
                 usage: "",
                 flags: map[string]bool{"literal": false, "insensitive": false, "confirm": true},
             },
