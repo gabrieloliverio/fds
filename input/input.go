@@ -31,18 +31,18 @@ type Args struct {
 	File fileArg
 }
 
-func Validate(args Args, literalFlag, insensitiveFlag, confirmFlag bool) error {
+func Validate(args Args, flags map[string] bool) error {
 	_, err := regexp.Compile(args.Search)
 
-	if !literalFlag && err != nil {
+	if !flags["literal"] && err != nil {
 		return NewInvalidRegExpError()
 	}
 
-	if literalFlag && insensitiveFlag {
+	if flags["literal"] && flags["insensitive"] {
 		return NewLiteralInsensitiveError()
 	}
 
-	if confirmFlag && args.File.Path == "" {
+	if flags["confirm"] && args.File.Path == "" {
 		return NewConfirmNotOnFileError()
 	}
 

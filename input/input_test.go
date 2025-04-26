@@ -31,9 +31,7 @@ func TestValidate(t *testing.T) {
     type validationInput struct {
         args Args
         usage string
-        literalFlag bool
-        insensitiveFlag bool
-        confirmFlag bool
+        flags map[string]bool
     }
 
     type test []struct{
@@ -49,9 +47,8 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "Foo", Replace: "Baz"},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: false,
-                confirmFlag: false,
+
+                flags: map[string]bool{"literal": false, "insensitive": false, "confirm": false},
             },
             expectError: false,
         },
@@ -60,9 +57,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "Foo", Replace: "Baz"},
                 usage: "",
-                literalFlag: true,
-                insensitiveFlag: false,
-                confirmFlag: false,
+                flags: map[string]bool{"literal": true, "insensitive": false, "confirm": false},
             },
             expectError: false,
         },
@@ -71,9 +66,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "Foo", Replace: "Baz"},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: true,
-                confirmFlag: false,
+                flags: map[string]bool{"literal": false, "insensitive": true, "confirm": false},
             },
             expectError: false,
         },
@@ -82,9 +75,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{File: fileArg{Path: "./foo"}, Subject: "Foo", Search: "Foo", Replace: "Baz"},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: false,
-                confirmFlag: true,
+                flags: map[string]bool{"literal": false, "insensitive": false, "confirm": true},
             },
             expectError: false,
         },
@@ -94,8 +85,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "Foo", Replace: "Baz"},
                 usage: "",
-                literalFlag: true,
-                insensitiveFlag: true,
+                flags: map[string]bool{"literal": true, "insensitive": true, "confirm": false},
             },
             expectError: true,
         },
@@ -104,8 +94,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "", Search: "Foo", Replace: "Baz"},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: false,
+                flags: map[string]bool{"literal": false, "insensitive": false, "confirm": false},
             },
             expectError: true,
         },
@@ -114,8 +103,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "", Replace: "Baz"},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: false,
+                flags: map[string]bool{"literal": false, "insensitive": false, "confirm": false},
             },
             expectError: true,
         },
@@ -124,8 +112,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "Foo", Replace: ""},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: false,
+                flags: map[string]bool{"literal": false, "insensitive": false, "confirm": false},
             },
             expectError: true,
         },
@@ -134,8 +121,7 @@ func TestValidate(t *testing.T) {
             input: validationInput{
                 args: Args{Subject: "Foo Bar", Search: "Foo", Replace: ""},
                 usage: "",
-                literalFlag: false,
-                insensitiveFlag: true,
+                flags: map[string]bool{"literal": false, "insensitive": true, "confirm": false},
             },
             expectError: true,
         },
@@ -145,9 +131,7 @@ func TestValidate(t *testing.T) {
         t.Run(tc.name, func(t *testing.T) {
             err := Validate(
                 tc.input.args,
-                tc.input.literalFlag,
-                tc.input.insensitiveFlag,
-                tc.input.confirmFlag,
+                tc.input.flags,
             )
 
             if err != nil && !tc.expectError {

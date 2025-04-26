@@ -12,14 +12,14 @@ import (
 	"github.com/gabrieloliverio/fds/match"
 )
 
-func ReplaceAllStringOrPattern(search, replace, subject string, literalFlag, insensitiveFlag bool) string {
+func ReplaceAllStringOrPattern(search, replace, subject string, flags map[string]bool) string {
 	searchWithModifiers := search 
 
-	if literalFlag {
+	if flags["literal"] {
 		searchWithModifiers = regexp.QuoteMeta(search)
 	}
 
-	if insensitiveFlag {
+	if flags["insensitive"] {
 		searchWithModifiers = "(?i)" + search
 	}
 
@@ -32,16 +32,16 @@ func ReplaceAllStringOrPattern(search, replace, subject string, literalFlag, ins
  * ReplaceStringRange replaces a given string or pattern when found in a range defined in `stringRange`
  * All other matches found out of the supplied range are ignored and therefore, not replaced 
  */
-func ReplaceStringRange(a input.Args, stringRange [2]int, literalFlag, insensitiveFlag bool) string {
+func ReplaceStringRange(a input.Args, stringRange [2]int, flags map[string]bool) string {
 	var prepend, append []byte
 
 	searchWithModifiers := a.Search
 
-	if literalFlag {
+	if flags["literal"] {
 		searchWithModifiers = regexp.QuoteMeta(a.Search)
 	}
 
-	if insensitiveFlag {
+	if flags["insensitive"] {
 		searchWithModifiers = "(?i)" + a.Search
 	}
 
@@ -58,7 +58,7 @@ func ReplaceStringRange(a input.Args, stringRange [2]int, literalFlag, insensiti
 /**
  * ReplaceInFile replaces a given string or pattern when found in `inputFile`. Lines are stored in `outputFile`
  */
-func ReplaceInFile(inputFile, outputFile *os.File, args input.Args, literalFlag, insensitiveFlag bool) error {
+func ReplaceInFile(inputFile, outputFile *os.File, args input.Args, flags map[string]bool) error {
 	inputFileStat, _ := inputFile.Stat()
 	var err error
 
@@ -76,7 +76,7 @@ func ReplaceInFile(inputFile, outputFile *os.File, args input.Args, literalFlag,
 			return fmt.Errorf("Error while reading file: %s", err)
 		}
 
-		replaced := ReplaceAllStringOrPattern(args.Search, args.Replace, line, literalFlag, insensitiveFlag)
+		replaced := ReplaceAllStringOrPattern(args.Search, args.Replace, line, flags)
 
 		_, errWrite := writer.WriteString(replaced)
 
@@ -94,7 +94,7 @@ func ReplaceInFile(inputFile, outputFile *os.File, args input.Args, literalFlag,
 	return err
 }
 
-func ConfirmAndReplace(inputFile, outputFile, stdin *os.File, args input.Args, literalFlag, insensitiveFlag, confirmFlag bool) error {
+func ConfirmAndReplace(inputFile, outputFile, stdin *os.File, args input.Args, flags map[string]bool) error {
 	inputFileStat, _ := inputFile.Stat()
 	var err error
 	var confirmedAll, confirmedQuit bool
@@ -117,12 +117,12 @@ func ConfirmAndReplace(inputFile, outputFile, stdin *os.File, args input.Args, l
 			break
 		}
 
-		if confirmedAll || !confirmFlag {
-			line = ReplaceAllStringOrPattern(args.Search, args.Replace, line, literalFlag, insensitiveFlag)
+		if confirmedAll || !flags["confirm"] {
+			line = ReplaceAllStringOrPattern(args.Search, args.Replace, line, flags)
 		}
 
-		if confirmFlag && !confirmedAll && !confirmedQuit  {
-			matches := match.FindStringOrPattern(args.Search, args.Replace, line, literalFlag, insensitiveFlag, 50)
+		if flags["confirm"] && !confirmedAll && !confirmedQuit  {
+			matches := match.FindStringOrPattern(args.Search, args.Replace, line, flags, 50)
 
 			for i, thisMatch := range matches {
 				var answer rune
@@ -152,11 +152,11 @@ func ConfirmAndReplace(inputFile, outputFile, stdin *os.File, args input.Args, l
 
 				switch answer {
 				case input.ConfirmYes:
-					line = ReplaceStringRange(args, stringRange, literalFlag, insensitiveFlag)
+					line = ReplaceStringRange(args, stringRange, flags)
 				case input.ConfirmNo:
 					// Nothing to do
 				case input.ConfirmAll:
-					line = ReplaceStringRange(args, stringRange, literalFlag, insensitiveFlag)
+					line = ReplaceStringRange(args, stringRange, flags)
 					confirmedAll = true
 				default:
 					// ConfirmedQuit
