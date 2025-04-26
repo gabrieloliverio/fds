@@ -13,13 +13,16 @@ Modern version of `sed` written in Go. Short version of **F**in**d** and **S**ub
 # Usage
 
 $ echo "some text" | fds text replacement # Using stdin
+$ fds "some text" text replacement # Using positional parameters
+$ fds ./afile text replacement # Reading file
+$ fds ./adir text replacement # Reading directory
 
 # Roadmap
 
 - [x] Stdin (pipe) + replacement as string
 - [x] Positional parameters
 - [x] Replacement as RegEx
-- [ ] Single file
+- [x] Single file
 - [ ] Glob and directories
 - [ ] Interactive mode
 - [ ] Concurrent
