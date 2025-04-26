@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -22,20 +23,16 @@ type args struct {
 }
 
 func (a args) validate() error {
-	usage := "usage:  fds subject search_pattern replace\n" +
+	usageErr := errors.New("usage:  fds subject search_pattern replace\n" +
 		"\techo subject search_pattern replace\n" +
-		"\tfds ./file search_pattern replace\n"
+		"\tfds ./file search_pattern replace\n")
 
 	if _, err := regexp.Compile(a.search); err != nil {
-		return fmt.Errorf(usage)
+		return usageErr
 	}
 
-	if a.replace == "" {
-		return fmt.Errorf(usage)
-	}
-
-	if a.subject == "" {
-		return fmt.Errorf(usage)
+	if a.replace == "" || a.subject == "" {
+		return usageErr
 	}
 
 	return nil
