@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type fileArg struct {
@@ -23,12 +24,21 @@ type args struct {
 	file fileArg
 }
 
-func (a args) validate() error {
-	usageErr := errors.New("usage:  fds subject search_pattern replace\n" +
-		"\techo subject search_pattern replace\n" +
-		"\tfds ./file search_pattern replace\n")
+const usage = `Usage:
+	fds [--literal] subject search_pattern replace
+	echo subject | fds [--literal] search_pattern replace
+	fds [--literal] ./file search_pattern replace
 
-	if _, err := regexp.Compile(a.search); err != nil {
+	Options:
+
+		-l, --literal 	Treat pattern as a regular string instead of as Regular Expression`
+
+func validate(a args, literalMode bool) error {
+	usageErr := errors.New(usage)
+
+	_, err := regexp.Compile(a.search)
+
+	if !literalMode && err != nil {
 		return usageErr
 	}
 
@@ -60,6 +70,12 @@ func readArgs() args {
 }
 
 func main() {
+	var literalMode bool
+
+	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
+	flag.BoolVar(&literalMode, "l", false, "Treat pattern as a regular string instead of as Regular Expression")
+	flag.BoolVar(&literalMode, "literal", false, "Treat pattern as a regular string instead of as Regular Expression")
+
 	flag.Parse()
 
 	var inputFile, tmpFile *os.File
@@ -69,13 +85,11 @@ func main() {
 	args := readArgs()
 
 	if args.file.path == "" {
-		err = args.validate()
+		err = validate(args, literalMode)
 
 		check(err)
 
-		result := replacePattern(regexp.MustCompile(args.search), args.replace, args.subject)
-
-		fmt.Println(result)
+		fmt.Println(replaceStringOrPattern(args.search, args.replace, args.subject, literalMode))
 
 		os.Exit(0)
 	}
@@ -100,15 +114,19 @@ func main() {
 
 	defer tmpFile.Close()
 
-	err = replaceInFile(inputFile, tmpFile, args)
+	err = replaceInFile(inputFile, tmpFile, args, literalMode)
 
 	err = os.Rename(tmpFile.Name(), inputFile.Name())
 
 	check(err)
 }
 
-func replacePattern(searchPattern *regexp.Regexp, replace, subject string) string {
-	return searchPattern.ReplaceAllString(subject, replace)
+func replaceStringOrPattern(search, replace, subject string, literal bool) string {
+	if literal {
+		return strings.ReplaceAll(subject, search, replace)
+	}
+
+	return regexp.MustCompile(search).ReplaceAllString(subject, replace)
 }
 
 func check(err error) {
@@ -135,9 +153,8 @@ func readFile(file *os.File) string {
 	return content
 }
 
-func replaceInFile(inputFile, outputFile *os.File, args args) error {
+func replaceInFile(inputFile, outputFile *os.File, args args, literal bool) error {
 	inputFileStat, _ := inputFile.Stat()
-	searchPattern := regexp.MustCompile(args.search)
 	var err error
 
 	if inputFileStat.Size() == 0 {
@@ -154,7 +171,7 @@ func replaceInFile(inputFile, outputFile *os.File, args args) error {
 			break
 		}
 
-		replaced := replacePattern(searchPattern, args.replace, line)
+		replaced := replaceStringOrPattern(args.search, args.replace, line, literal)
 
 		_, err = writer.WriteString(replaced)
 
