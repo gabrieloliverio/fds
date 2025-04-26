@@ -18,6 +18,10 @@ func NewInvalidArgumentsError() Error {
 	return Error{message: "Invalid arguments"}
 }
 
+func NewInvalidArgumentsErrorFileNotFound(filePath string) Error {
+	return Error{message: fmt.Sprintf("File '%s' could not be found", filePath)}
+}
+
 func NewLiteralInsensitiveError() Error {
 	return Error{message: "[-l, --literal] cannot be used along with [ -i, --insensitive ]"}
 }
