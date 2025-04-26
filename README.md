@@ -34,8 +34,8 @@ $ fds text replacement ./a_directory            # Reading directory
 - [x] Include line numbers
 - [x] Directories
 - [x] Glob
-- [ ] Multiple files, directories and/or globs
-- [ ] Ignore files listed in .gitignore
-- [ ] Accept --ignore-glob
+- [x] Accept --ignore-glob
 - [ ] Catch interrupt signal to clean up temp files
+- [ ] Ignore files listed in .gitignore
+- [ ] Multiple files, directories and/or globs
 - [ ] Concurrency when reading/writing several files

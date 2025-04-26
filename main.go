@@ -14,10 +14,11 @@ import (
 
 func main() {
 	var (
-		literalFlag, insensitiveFlag, confirmFlag bool
-		err                                       error
-		defaultAnswer                             = input.ConfirmAnswer('n')
-		confirmAnswer                             = &defaultAnswer
+		literalFlag, insensitiveFlag, confirmFlag, verboseFlag bool
+		ignoreGlobs                                            input.IgnoreGlobs
+		err                                                    error
+		defaultAnswer                                          = input.ConfirmAnswer('n')
+		confirmAnswer                                          = &defaultAnswer
 	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
@@ -30,6 +31,11 @@ func main() {
 
 	flag.BoolVar(&confirmFlag, "c", false, "Confirm each substitution")
 	flag.BoolVar(&confirmFlag, "confirm", false, "Confirm each substitution")
+
+	flag.BoolVar(&verboseFlag, "v", false, "Print debug information")
+	flag.BoolVar(&verboseFlag, "verbose", false, "Print debug information")
+
+	flag.Var(&ignoreGlobs, "ignore", "Confirm each substitution")
 
 	flag.Parse()
 
@@ -57,7 +63,7 @@ func main() {
 		return
 	}
 
-	files, err := getFilesInDir(args.Path.Value)
+	files, err := getFilesInDir(args.Path.Value, ignoreGlobs, verboseFlag)
 	check(err)
 
 	err = replaceInFiles(files, args, flags, confirmAnswer)
@@ -100,17 +106,29 @@ func replaceInFiles(files []string, args input.Args, flags map[string]bool, conf
 	return nil
 }
 
-func getFilesInDir(root string) ([]string, error) {
+func getFilesInDir(root string, ignoreGlobs input.IgnoreGlobs, verbose bool) ([]string, error) {
 	fileSystem := os.DirFS(root)
 	var filepaths []string
+
+	if verbose {
+		log.Printf("Ignoring glob patterns \"%s\"\n", ignoreGlobs.String())
+	}
 
 	err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if !d.IsDir() {
-			filepaths = append(filepaths, filepath.Join(root, path))
+		fullpath := filepath.Join(root, path)
+
+		patternMatch := ignoreGlobs.MatchAny(fullpath)
+
+		if verbose && patternMatch {
+			log.Printf("Pattern matched path \"%s\"\n", path)
+		}
+
+		if !d.IsDir() && !patternMatch {
+			filepaths = append(filepaths, fullpath)
 		}
 
 		return nil
@@ -118,6 +136,10 @@ func getFilesInDir(root string) ([]string, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if verbose {
+		log.Printf("Found %d files: %s\n", len(filepaths), filepaths)
 	}
 
 	return filepaths, nil

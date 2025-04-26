@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/bmatcuk/doublestar/v4"
 )
 
 const Usage = `Usage:
@@ -15,9 +17,11 @@ const Usage = `Usage:
 
 Options:
 
-	-l, --literal 		Treat pattern as a regular string instead of as Regular Expression
-	-i, --insensitive 	Ignore case on search
-	-c, --confirm 		Confirm each substitution
+	-l, -literal        Treat pattern as a regular string instead of as Regular Expression
+	-i, -insensitive    Ignore case on search
+	-c, -confirm        Confirm each substitution
+	-v, -verbose        Print debug information
+	-ignore             Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
 `
 
 type pathArg struct {
@@ -96,3 +100,31 @@ func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
 
 	return args, nil
 }
+
+type IgnoreGlobs []string
+
+func (i *IgnoreGlobs) String() string {
+	return strings.Join(*i, ",")
+}
+
+func (i *IgnoreGlobs) Get() []string {
+	return []string(*i)
+}
+
+func (i *IgnoreGlobs) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+func (i IgnoreGlobs) MatchAny(filePath string) bool {
+	for _, pattern := range []string(i) {
+		matches, _ := doublestar.PathMatch(pattern, filePath)
+
+		if matches {
+			return true
+		}
+	}
+
+	return false
+}
+
