@@ -21,19 +21,19 @@ func main() {
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
 
-	flag.BoolVar(&literalFlag, "l", false, "Treat pattern as a regular string instead of as Regular Expression")
-	flag.BoolVar(&literalFlag, "literal", false, "Treat pattern as a regular string instead of as Regular Expression")
+	flag.BoolVar(&literalFlag, "l", false, input.LiteralUsage)
+	flag.BoolVar(&literalFlag, "literal", false, input.LiteralUsage)
 
-	flag.BoolVar(&insensitiveFlag, "i", false, "Insensitive case on search")
-	flag.BoolVar(&insensitiveFlag, "insensitive", false, "Insensitive case on search")
+	flag.BoolVar(&insensitiveFlag, "i", false, input.InsensitiveUsage)
+	flag.BoolVar(&insensitiveFlag, "insensitive", false, input.InsensitiveUsage)
 
-	flag.BoolVar(&confirmFlag, "c", false, "Confirm each substitution")
-	flag.BoolVar(&confirmFlag, "confirm", false, "Confirm each substitution")
+	flag.BoolVar(&confirmFlag, "c", false, input.ConfirmUsage)
+	flag.BoolVar(&confirmFlag, "confirm", false, input.ConfirmUsage)
 
-	flag.BoolVar(&verboseFlag, "v", false, "Print debug information")
-	flag.BoolVar(&verboseFlag, "verbose", false, "Print debug information")
+	flag.BoolVar(&verboseFlag, "v", false, input.VerboseUsage)
+	flag.BoolVar(&verboseFlag, "verbose", false, input.VerboseUsage)
 
-	flag.Var(&ignoreGlobs, "ignore", "Confirm each substitution")
+	flag.Var(&ignoreGlobs, "ignore", input.IgnoreUsage)
 
 	flag.Parse()
 

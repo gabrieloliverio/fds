@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -9,7 +10,15 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-const Usage = `Usage:
+const (
+	LiteralUsage = "Treat pattern as a regular string instead of as Regular Expression"
+	ConfirmUsage = "Confirm each substitution"
+	InsensitiveUsage = "Ignore case on search"
+	VerboseUsage = "Print debug information"
+	IgnoreUsage = "Ignore glob patterns, comma-separated. Ex. -ignore \"vendor/**,node_modules/lib/**.js\""
+)
+
+var Usage = fmt.Sprintf(`Usage:
 	echo subject | fds [ options ] search_pattern replace
 	fds [ options ] search_pattern replace ./file
 	fds [ options ] search_pattern replace ~/directory
@@ -17,12 +26,12 @@ const Usage = `Usage:
 
 Options:
 
-	-l, -literal        Treat pattern as a regular string instead of as Regular Expression
-	-i, -insensitive    Ignore case on search
-	-c, -confirm        Confirm each substitution
-	-v, -verbose        Print debug information
-	-ignore             Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
-`
+	-l, -literal        %s
+	-i, -insensitive    %s
+	-c, -confirm        %s
+	-v, -verbose        %s
+	-ignore             %s
+`, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage)
 
 type PathArg struct {
 	Value string
