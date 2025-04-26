@@ -1,10 +1,9 @@
-packages := ./input ./match ./replace
-
-fds: $(packages) main.go
-	go build .
-
 test:
-	go test -v $(packages)
+	go test -cover ./...
+
+coverage:
+	go test ./... -coverprofile=coverage.out \
+		&& go tool cover -html=coverage.out
 
 clean:
-	rm -f fds
+	rm -f fds coverage.out

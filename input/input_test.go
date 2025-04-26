@@ -73,7 +73,7 @@ func TestValidate(t *testing.T) {
         {
             name: "Valid subject (file content), search, replace. Confirm flag true",
             input: validationInput{
-                args: Args{Path: pathArg{Value: "./foo"}, Subject: "Foo", Search: "Foo", Replace: "Baz"},
+                args: Args{Path: PathArg{Value: "./foo"}, Subject: "Foo", Search: "Foo", Replace: "Baz"},
                 usage: "",
                 flags: map[string]bool{"literal": false, "insensitive": false, "confirm": true},
             },
@@ -184,4 +184,70 @@ func TestReadArgs_NoParametersReturnError(t *testing.T) {
 	if err == nil {
 		t.Errorf(`ReadArgs() expected error, did not get error"`)
 	}
+}
+
+func TestIgnoreGlobs_MatchAny(t *testing.T) {
+    type test struct {
+        name string
+        input string
+        globs []string
+        want bool
+    }
+
+    tests := []test{
+        {
+            name: "path should match",
+            input: "/foo",
+            globs: []string{"/foo", "/bar"},
+            want: true,
+        },
+        {
+            name: "path not should match",
+            input: "/foo",
+            globs: []string{"/baz", "/bar"},
+            want: false,
+        },
+    }
+
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            ignoreGlob := IgnoreGlobs(tc.globs)
+
+            result := ignoreGlob.MatchAny(tc.input)
+
+            if result != tc.want {
+		        t.Errorf(`IgnoreGlob.MatchAny() = "%t", want "%t"`, result, tc.want)
+            }
+        })
+    }
+}
+
+func TestIgnoreGlobs_String(t *testing.T) {
+    type test struct {
+        globs []string
+        want string
+    }
+
+    tests := []test{
+        {
+            globs: []string{"/foo", "/bar"},
+            want: "/foo,/bar",
+        },
+        {
+            globs: []string{"/baz", "/bar"},
+            want: "/baz,/bar",
+        },
+    }
+
+    for _, tc := range tests {
+        t.Run("IgnoreGlobs.String", func(t *testing.T) {
+            ignoreGlob := IgnoreGlobs(tc.globs)
+
+            result := ignoreGlob.String()
+
+            if result != tc.want {
+		        t.Errorf(`IgnoreGlob.String() = "%s", want "%s"`, result, tc.want)
+            }
+        })
+    }
 }

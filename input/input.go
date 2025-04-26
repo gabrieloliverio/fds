@@ -24,16 +24,16 @@ Options:
 	-ignore             Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
 `
 
-type pathArg struct {
+type PathArg struct {
 	Value string
 	fileInfo os.FileInfo
 }
 
-func (p pathArg) IsDir() bool {
+func (p PathArg) IsDir() bool {
 	return p.fileInfo.IsDir()
 }
 
-func (p pathArg) IsFile() bool {
+func (p PathArg) IsFile() bool {
 	return !p.fileInfo.IsDir()
 }
 
@@ -42,7 +42,7 @@ type Args struct {
 	Search  string
 	Replace string
 
-	Path pathArg
+	Path PathArg
 }
 
 func Validate(args Args, flags map[string] bool) error {
@@ -96,7 +96,7 @@ func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
 		return Args{}, NewInvalidArgumentsErrorFileNotFound(args.Subject)
 	}
 
-	args.Path = pathArg{Value: args.Subject, fileInfo: fileStat}
+	args.Path = PathArg{Value: args.Subject, fileInfo: fileStat}
 
 	return args, nil
 }
