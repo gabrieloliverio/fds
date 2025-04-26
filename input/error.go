@@ -2,41 +2,42 @@ package input
 
 import "fmt"
 
-type UsageError struct {
-	arg string
-	flag string
+type Error struct {
 	message string
 }
 
-func (u UsageError) Error() string {
-	var message string
-
-	switch {
-	case u.arg != "":
-		message = fmt.Sprintf("%s\n[ %s ] %s\n", Usage, u.arg, u.message)
-	case u.flag != "":
-		message = fmt.Sprintf("%s\n[ %s ] %s\n", Usage, u.flag, u.message)
-	default:
-		message = fmt.Sprintf("%s\n%s\n", Usage, u.message)
-	}
-
-	return message
+func (u Error) Error() string {
+	return fmt.Sprintf("%s\n\n%s", Usage, u.message)
 }
 
-func NewInvalidRegExpError() UsageError {
-	return UsageError{
-		message: "is not a valid Regular Expression",
-		arg: "subject",
-	}
+func NewInvalidRegExpError() Error {
+	return Error{message: "subject is not a valid Regular Expression"}
 }
 
-func NewInvalidArgumentsError() UsageError {
-	return UsageError{message: "Invalid arguments"}
+func NewInvalidArgumentsError() Error {
+	return Error{message: "Invalid arguments"}
 }
 
-func NewLiteralInsensitiveError() UsageError {
-	return UsageError{
-		message: "cannot be used along with [ -i, --insensitive ]",
-		flag: "-l, --literal",
+func NewLiteralInsensitiveError() Error {
+	return Error{message: "[-l, --literal] cannot be used along with [ -i, --insensitive ]"}
+}
+
+func NewConfirmNotOnFileError() Error {
+	return Error{message: "[-c, --confirm] can only be used when files are supplied, not with STDIN nor positional arguments"}
+}
+
+type ConfirmError struct {
+	input rune
+	message string
+}
+
+func (e ConfirmError) Error() string {
+	return fmt.Sprintf("%s: %c", e.message, e.input)
+}
+
+func NewInvalidConfirmInputError(input rune) ConfirmError {
+	return ConfirmError{
+		message: "Invalid input",
+		input: input,
 	}
 }

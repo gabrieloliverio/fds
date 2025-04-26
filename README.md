@@ -32,6 +32,8 @@ $ fds dir/**/file.* text replacement            # Glob
 - [x] Support for symlinks (similar to sed's `--follow-symlink`)
 - [x] Support for string-literal mode
 - [x] Support for case-insensitive mode
-- [ ] Interactive mode
+- [x] Interactive mode
 - [ ] Multiple files, directories and Glob
+- [ ] Ignore files listed in .gitignore
+- [ ] Accept --ignore-glob
 - [ ] Concurrency when reading/writing several files
