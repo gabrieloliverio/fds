@@ -1,4 +1,5 @@
-[![Go](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml/badge.svg)](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml)
+[![Build](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml/badge.svg)](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml)
+[![Sonar Cloud](https://sonarcloud.io/api/project_badges/measure?project=gabrieloliverio_fds&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gabrieloliverio_fds)
 
 # `fds`
 
