@@ -34,7 +34,6 @@ func createFiles(tempDir, inputContent string, t *testing.T) (*os.File, *os.File
 	return inputFile, outputFile
 }
 
-
 func TestLineReplacer_Replace(t *testing.T) {
 	var tests = []struct{
 		name string

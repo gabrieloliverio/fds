@@ -213,3 +213,17 @@ func TestReplaceInFile_ConfirmQuit(t *testing.T) {
 		t.Errorf(`ReplaceInFile(%s, %s) = "%q", want "%q"`, search, replace, result, want)
 	}
 }
+
+func TestResolveInputFileSymlink(t *testing.T) {
+	tempDir := t.TempDir()
+
+	os.Create(path.Join(tempDir, "file"))
+	os.Symlink(path.Join(tempDir, "file"), path.Join(tempDir, "symlink"))
+
+	resolvedFile, _ := resolveInputFile(path.Join(tempDir, "symlink"))
+	stat, _ := resolvedFile.Stat()
+
+	if stat.Mode() == os.ModeSymlink {
+		t.Errorf("resolveInputFile() resolved a symlink instead of file")
+	}
+}

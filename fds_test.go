@@ -12,9 +12,7 @@ import (
 )
 
 func TestReplaceInFile(t *testing.T) {
-	tempDir, err := os.MkdirTemp(os.TempDir(), "test")
-	defer os.RemoveAll(tempDir)
-
+	tempDir := t.TempDir()
 	inputPath := path.Join(tempDir, "input")
 
 	createTestFile(tempDir, "input", "Lorem ipsum dolor sit amet", t)
@@ -23,7 +21,7 @@ func TestReplaceInFile(t *testing.T) {
 	flags := map[string]bool{}
 	var confirmAnswer *input.ConfirmAnswer
 
-	err = ReplaceInFile(inputPath, args, flags, confirmAnswer)
+	err := ReplaceInFile(inputPath, args, flags, confirmAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
@@ -38,8 +36,7 @@ func TestReplaceInFile(t *testing.T) {
 }
 
 func TestReplaceInFiles(t *testing.T) {
-	tempDir, err := os.MkdirTemp(os.TempDir(), "test")
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	defaultAnswer := input.ConfirmAnswer('n')
 
@@ -52,7 +49,7 @@ func TestReplaceInFiles(t *testing.T) {
 	args := input.Args{Path: input.PathArg{Value: inputPath1}, Search: "Lorem", Replace: "mamãe"}
 	flags := map[string]bool{}
 
-	err = ReplaceInFiles([]string{inputPath1, inputPath2}, args, flags, &defaultAnswer)
+	err := ReplaceInFiles([]string{inputPath1, inputPath2}, args, flags, &defaultAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
@@ -73,8 +70,7 @@ func TestReplaceInFiles(t *testing.T) {
 }
 
 func TestGetFilesInDir_NoIgnoreGlobs_FindAllFiles(t *testing.T) {
-	tempDir, err := os.MkdirTemp(os.TempDir(), "test")
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	createTreeStructure(tempDir)
 
@@ -100,8 +96,7 @@ func TestGetFilesInDir_NoIgnoreGlobs_FindAllFiles(t *testing.T) {
 }
 
 func TestGetFilesInDir_IgnoreGlobs(t *testing.T) {
-	tempDir, err := os.MkdirTemp(os.TempDir(), "test")
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	createTreeStructure(tempDir)
 
@@ -128,8 +123,7 @@ func TestGetFilesInDir_IgnoreGlobs(t *testing.T) {
 }
 
 func TestGetFilesInDir_IgnoreGlobs_ReturnsNoFiles(t *testing.T) {
-	tempDir, err := os.MkdirTemp(os.TempDir(), "test")
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	createTreeStructure(tempDir)
 
