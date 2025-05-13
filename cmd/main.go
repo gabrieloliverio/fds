@@ -12,7 +12,7 @@ import (
 
 func main() {
 	var (
-		literalFlag, insensitiveFlag, confirmFlag, verboseFlag bool
+		literal, insensitive, confirm, verbose bool
 		ignoreGlobs                                            input.IgnoreGlobs
 		err                                                    error
 		defaultAnswer                                          = input.ConfirmAnswer('n')
@@ -21,23 +21,23 @@ func main() {
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
 
-	flag.BoolVar(&literalFlag, "l", false, input.LiteralUsage)
-	flag.BoolVar(&literalFlag, "literal", false, input.LiteralUsage)
+	flag.BoolVar(&literal, "l", false, input.LiteralUsage)
+	flag.BoolVar(&literal, "literal", false, input.LiteralUsage)
 
-	flag.BoolVar(&insensitiveFlag, "i", false, input.InsensitiveUsage)
-	flag.BoolVar(&insensitiveFlag, "insensitive", false, input.InsensitiveUsage)
+	flag.BoolVar(&insensitive, "i", false, input.InsensitiveUsage)
+	flag.BoolVar(&insensitive, "insensitive", false, input.InsensitiveUsage)
 
-	flag.BoolVar(&confirmFlag, "c", false, input.ConfirmUsage)
-	flag.BoolVar(&confirmFlag, "confirm", false, input.ConfirmUsage)
+	flag.BoolVar(&confirm, "c", false, input.ConfirmUsage)
+	flag.BoolVar(&confirm, "confirm", false, input.ConfirmUsage)
 
-	flag.BoolVar(&verboseFlag, "v", false, input.VerboseUsage)
-	flag.BoolVar(&verboseFlag, "verbose", false, input.VerboseUsage)
+	flag.BoolVar(&verbose, "v", false, input.VerboseUsage)
+	flag.BoolVar(&verbose, "verbose", false, input.VerboseUsage)
 
-	flag.Var(&ignoreGlobs, "ignore", input.IgnoreUsage)
+	flag.Var(&ignoreGlobs, "ignore-globs", input.IgnoreUsage)
 
 	flag.Parse()
 
-	flags := map[string]bool{"confirm": confirmFlag, "insensitive": insensitiveFlag, "literal": literalFlag}
+	flags := map[string]bool{"confirm": confirm, "insensitive": insensitive, "literal": literal, "verbose": verbose}
 
 	args, err := input.ReadArgs(os.Stdin, flag.Args())
 	fds.CheckError(err)
@@ -60,7 +60,7 @@ func main() {
 		return
 	}
 
-	files, err := fds.GetFilesInDir(args.Path.Value, ignoreGlobs, verboseFlag)
+	files, err := fds.GetFilesInDir(args.Path.Value, ignoreGlobs, verbose)
 	fds.CheckError(err)
 
 	err = fds.ReplaceInFiles(files, args, flags, confirmAnswer)

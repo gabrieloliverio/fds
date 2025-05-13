@@ -15,7 +15,7 @@ const (
 	ConfirmUsage = "Confirm each substitution"
 	InsensitiveUsage = "Ignore case on search"
 	VerboseUsage = "Print debug information"
-	IgnoreUsage = "Ignore glob patterns, comma-separated. Ex. -ignore \"vendor/**,node_modules/lib/**.js\""
+	IgnoreUsage = "Ignore glob patterns, comma-separated. Ex. -ignore-globs \"vendor/**,node_modules/lib/**.js\""
 )
 
 var Usage = fmt.Sprintf(`Usage:
@@ -30,7 +30,7 @@ Options:
 	-i, -insensitive    %s
 	-c, -confirm        %s
 	-v, -verbose        %s
-	-ignore             %s
+	-ignore-globs       %s
 `, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage)
 
 type PathArg struct {

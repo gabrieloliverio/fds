@@ -33,7 +33,7 @@ Options:
 	-i, -insensitive    Ignore case on search
 	-c, -confirm        Confirm each substitution
 	-v, -verbose        Print debug information
-	-ignore             Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
+	-ignore-globs       Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
 ```
 
 # Roadmap
@@ -49,7 +49,7 @@ Options:
 - [x] Include line numbers
 - [x] Directories
 - [x] Glob
-- [x] Accept --ignore-glob
+- [x] Accept --ignore-globs
 - [ ] Catch interrupt signal to clean up temp files
 - [ ] Ignore files listed in .gitignore
 - [ ] Multiple files, directories and/or globs
