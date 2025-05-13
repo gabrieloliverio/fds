@@ -12,11 +12,11 @@ import (
 
 func main() {
 	var (
-		literal, insensitive, confirm, verbose bool
-		ignoreGlobs                                            input.IgnoreGlobs
-		err                                                    error
-		defaultAnswer                                          = input.ConfirmAnswer('n')
-		confirmAnswer                                          = &defaultAnswer
+		literal, insensitive, confirm, verbose    bool
+		ignoreGlobs                               input.IgnoreGlobs
+		err                                       error
+		defaultAnswer                             = input.ConfirmAnswer('n')
+		confirmAnswer                             = &defaultAnswer
 	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }

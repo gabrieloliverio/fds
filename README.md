@@ -1,3 +1,4 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml/badge.svg)](https://github.com/gabrieloliverio/fds/actions/workflows/go.yml)
 [![Sonar Cloud](https://sonarcloud.io/api/project_badges/measure?project=gabrieloliverio_fds&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gabrieloliverio_fds)
 
@@ -22,10 +23,10 @@ Modern and opinionated find/replace CLI programme. Short version of **F**in**d**
 # Usage
 
 ```
-$ echo subject | fds [ options ] search_pattern replace
-$ fds [ options ] search_pattern replace ./file
-$ fds [ options ] search_pattern replace ~/directory
-$ fds [ options ] search_pattern replace ~/directory/**/somepattern*
+echo subject | fds [ options ] search_pattern replace
+fds [ options ] search_pattern replace ./file
+fds [ options ] search_pattern replace ~/directory
+fds [ options ] search_pattern replace ~/directory/**/somepattern*
 
 Options:
 
@@ -34,6 +35,26 @@ Options:
 	-c, -confirm        Confirm each substitution
 	-v, -verbose        Print debug information
 	-ignore-globs       Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
+
+Examples:
+
+# From stdin
+echo "baz bar" | fds "baz" "foo" # prints out "foo bar"
+
+# Replace in a file
+fds "foo" "bar" ./file.txt
+
+# Confirm each replacement
+fds -c "foo" "bar" ./file.txt
+
+# Literal mode
+fds -l "->" "=>" ./file.txt
+
+# Insensitive mode
+fds -i "foo" "bar" ./file.txt
+
+# Replace recursively in .txt files
+fds "foo" "bar" ./dir/**/*.txt
 ```
 
 # Roadmap
