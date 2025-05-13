@@ -31,7 +31,7 @@ func TestConfirm_Valid(t *testing.T) {
     stdin := createFile(t.TempDir(), "y", t)
 
     want := 'y'
-    result, err := Confirm(stdin)
+    result, err := Confirm(stdin, "text", []rune{'y', 'n'})
 
     if err != nil {
         t.Fatalf("Confirm() does not expect error, got error %s", err)
@@ -45,7 +45,7 @@ func TestConfirm_Valid(t *testing.T) {
 func TestConfirm_Invalid(t *testing.T) {
     stdin := createFile(t.TempDir(), "*", t)
 
-    _, err := Confirm(stdin)
+    _, err := Confirm(stdin, "text", []rune{'y', 'n'})
 
     if err == nil {
         t.Fatalf("Confirm() expects error, did not get error %s", err)

@@ -19,14 +19,57 @@ func ReplaceInFile(path string, args input.Args, flags map[string]bool, confirmA
 	defer inputFile.Close()
 	defer tmpFile.Close()
 
+	inputStat, _ := inputFile.Stat()
+	originalModTime := inputStat.ModTime()
+
 	replacer := replace.NewFileReplacer(inputFile, tmpFile, flags)
+
+	if flags["verbose"] {
+		log.Printf("Replacing %s for %s in file %s", args.Search, args.Replace, path)
+	}
 
 	err = replacer.ReplaceInFile(args.Search, args.Replace, os.Stdin, confirmAnswer)
 
 	CheckError(err)
 
-	err = os.Rename(tmpFile.Name(), inputFile.Name())
-	CheckError(err)
+	inputStat, _ = inputFile.Stat()
+	inputFileHasChanged := inputStat.ModTime().After(originalModTime)
+	renameFile := true
+
+	if flags["verbose"] {
+		log.Printf("Replace in temp file completed")
+		log.Printf("Original timestamp of file %s: %s", path, originalModTime)
+	}
+
+	if inputFileHasChanged {
+		if flags["verbose"] {
+			log.Printf("File %s has been modified since %s", path, originalModTime)
+		}
+
+		confirmText := fmt.Sprintf("File %s was modified after initial read. Overwrite anyway? [y]es [n]o", path)
+		answer, _ := input.Confirm(os.Stdin, confirmText, []rune{'y', 'n'})
+
+		if answer == 'n' {
+			renameFile = false
+
+			if flags["verbose"] && inputFileHasChanged {
+				log.Printf("File %s will not be overwritten", path)
+			}
+		}
+	}
+
+	if renameFile {
+		if flags["verbose"] && inputFileHasChanged {
+			log.Printf("Overwriting file %s with contents from temp file", path)
+		}
+
+		err = os.Rename(tmpFile.Name(), inputFile.Name())
+		CheckError(err)
+
+		if flags["verbose"] {
+			log.Printf("Renamed temp file %s to %s", tmpFile.Name(), inputFile.Name())
+		}
+	}
 
 	return err
 }
@@ -39,7 +82,7 @@ func ReplaceInFiles(files []string, args input.Args, flags map[string]bool, conf
 			return err
 		}
 
-		if rune(*confirmAnswer) == input.ConfirmQuit {
+		if rune(*confirmAnswer) == replace.ConfirmQuit {
 			break
 		}
 	}

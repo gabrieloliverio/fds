@@ -27,11 +27,15 @@ func ConfirmMatch(match MatchString, filename string, lineNumber int, stdin *os.
     fmt.Printf("File\t%s\n", filename)
     fmt.Printf("%d\t%s%s%s%s\n", lineNumber, match.Before, red.Sprint(match.Search), green.Sprint(match.Replace), match.After)
 
-	ret, err := input.Confirm(stdin)
+    confirmText := "[y]es [n]o [a]ll q[uit]"
+    valid := []rune{'y', 'n', 'a', 'q'}
+	ret, err := input.Confirm(stdin, confirmText, valid)
 
 	if err != nil {
 		return 0, err
 	}
+
+	fmt.Println()
 
 	return ret, nil
 }

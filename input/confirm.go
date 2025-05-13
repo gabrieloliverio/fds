@@ -8,27 +8,20 @@ import (
 )
 
 const (
-    confirmText = "[y]es [n]o [a]ll q[uit]: "
     enter = 10
-
-    ConfirmYes = 'y'
-    ConfirmNo = 'n'
-    ConfirmAll = 'a'
-    ConfirmQuit = 'q'
 )
 
 type ConfirmAnswer rune
 
-func Confirm(stdin *os.File) (rune, error) {
+func Confirm(stdin *os.File, text string, valid []rune) (rune, error) {
     var input rune
     var err error
 
-    valid := []rune{'y', 'n', 'a', 'q'}
     reader := bufio.NewReader(stdin)
 
     for !slices.Contains(valid, input) {
         if input != enter {
-            fmt.Print(confirmText)
+            fmt.Print(text + ": ")
         }
 
         input, _, err = reader.ReadRune()

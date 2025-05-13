@@ -11,6 +11,15 @@ import (
 	"github.com/gabrieloliverio/fds/match"
 )
 
+const (
+    confirmText = "[y]es [n]o [a]ll q[uit]: "
+
+    ConfirmYes = 'y'
+    ConfirmNo = 'n'
+    ConfirmAll = 'a'
+    ConfirmQuit = 'q'
+)
+
 type FileReplacer struct {
 	LineReplacer
 
@@ -81,7 +90,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File, 
 	var confirmedAll, confirmedQuit bool
 
 	// feedback confirmedAll that propagated all the way back to the main function
-	confirmedAll = *confirmAnswer == input.ConfirmAll 
+	confirmedAll = *confirmAnswer == ConfirmAll
 
 	if inputFileStat, _ := r.inputFile.Stat(); inputFileStat.Size() == 0 {
 		return nil
@@ -128,8 +137,8 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 	var answer rune
 	var err error
 
-	confirmedQuit := rune(*confirmAnswer) == input.ConfirmQuit
-	confirmedAll := rune(*confirmAnswer) == input.ConfirmAll
+	confirmedQuit := rune(*confirmAnswer) == ConfirmQuit
+	confirmedAll := rune(*confirmAnswer) == ConfirmAll
 	
 	replacedLine := line
 
@@ -145,7 +154,7 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 		}
 
 		if confirmedAll {
-			answer = input.ConfirmYes
+			answer = ConfirmYes
 		} else {
 			answer, err = match.ConfirmMatch(thisMatch, r.inputFile.Name(), lineNumber, stdin)
 			*confirmAnswer = input.ConfirmAnswer(answer)
@@ -156,11 +165,11 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 		}
 
 		switch answer {
-		case input.ConfirmYes:
+		case ConfirmYes:
 			replacedLine = r.LineReplacer.ReplaceStringRange(replacedLine, search, replace, stringRange)
-		case input.ConfirmNo:
+		case ConfirmNo:
 			// Nothing to do
-		case input.ConfirmAll:
+		case ConfirmAll:
 			replacedLine = r.LineReplacer.ReplaceStringRange(replacedLine, search, replace, stringRange)
 			confirmedAll = true
 		default:
