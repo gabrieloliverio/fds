@@ -40,18 +40,7 @@ func ConfirmMatch(match MatchString, filename string, lineNumber int, stdin *os.
 	return ret, nil
 }
 
-func FindStringOrPattern(search, replace, subject string, flags map[string]bool, bytesInDiff int) []MatchString {
-	searchWithModifiers := search 
-
-	if flags["literal"] {
-		searchWithModifiers = regexp.QuoteMeta(search)
-	}
-
-	if flags["insensitive"] {
-		searchWithModifiers = "(?i)" + search
-	}
-
-	pattern := regexp.MustCompile(searchWithModifiers)
+func FindStringOrPattern(pattern *regexp.Regexp, replace, subject string, bytesInDiff int) []MatchString {
 	allIndexes := pattern.FindAllStringIndex(subject, -1)
 
 	matches := make([]MatchString, 0)

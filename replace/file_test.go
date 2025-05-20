@@ -21,8 +21,9 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 	replace :=	"replacement"
 
 	fileReplacer := NewFileReplacer(inputFile, outputFile, flags)
+	pattern := fileReplacer.CompilePattern(search)
 
-	err := fileReplacer.ReplaceInFile(search, replace, nil, nil)
+	err := fileReplacer.ReplaceInFile(pattern, replace, nil, nil)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -55,8 +56,9 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 	replace :=	"replacement"
 
 	fileReplacer := NewFileReplacer(inputFile, outputFile, flags)
+	pattern := fileReplacer.CompilePattern(search)
 
-	err := fileReplacer.ReplaceInFile(search, replace, nil, nil)
+	err := fileReplacer.ReplaceInFile(pattern, replace, nil, nil)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -89,8 +91,9 @@ func TestReplaceInFile_NotFound(t *testing.T) {
 	replace :=	"replacement"
 
 	fileReplacer := NewFileReplacer(inputFile, outputFile, flags)
+	pattern := fileReplacer.CompilePattern(search)
 
-	err := fileReplacer.ReplaceInFile(search, replace, nil, nil)
+	err := fileReplacer.ReplaceInFile(pattern, replace, nil, nil)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -123,9 +126,10 @@ func TestReplaceInFile_ConfirmAll(t *testing.T) {
 	replace :=	"replacement"
 
 	fileReplacer := NewFileReplacer(inputFile, outputFile, flags)
+	pattern := fileReplacer.CompilePattern(search)
 
 	confirm := input.ConfirmAnswer('a')
-	err := fileReplacer.ReplaceInFile(search, replace, nil, &confirm)
+	err := fileReplacer.ReplaceInFile(pattern, replace, nil, &confirm)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -158,9 +162,10 @@ func TestReplaceInFile_ConfirmNo(t *testing.T) {
 	replace :=	"replacement"
 
 	fileReplacer := NewFileReplacer(inputFile, outputFile, flags)
+	pattern := fileReplacer.CompilePattern(search)
 
 	confirm := input.ConfirmAnswer('n')
-	err := fileReplacer.ReplaceInFile(search, replace, nil, &confirm)
+	err := fileReplacer.ReplaceInFile(pattern, replace, nil, &confirm)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
@@ -193,9 +198,10 @@ func TestReplaceInFile_ConfirmQuit(t *testing.T) {
 	replace :=	"replacement"
 
 	fileReplacer := NewFileReplacer(inputFile, outputFile, flags)
+	pattern := fileReplacer.CompilePattern(search)
 
 	confirm := input.ConfirmAnswer('q')
-	err := fileReplacer.ReplaceInFile(search, replace, nil, &confirm)
+	err := fileReplacer.ReplaceInFile(pattern, replace, nil, &confirm)
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)

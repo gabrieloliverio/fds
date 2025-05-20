@@ -13,7 +13,7 @@ func NewReplacer(flags map[string]bool) LineReplacer {
 	return LineReplacer{flags: flags}
 }
 
-func (s LineReplacer) Replace(subject, search, replace string) string {
+func (s LineReplacer) CompilePattern(search string) *regexp.Regexp {
 	searchWithModifiers := search 
 
 	if s.flags["literal"] {
@@ -24,8 +24,10 @@ func (s LineReplacer) Replace(subject, search, replace string) string {
 		searchWithModifiers = "(?i)" + search
 	}
 
-	pattern := regexp.MustCompile(searchWithModifiers)
+	return regexp.MustCompile(searchWithModifiers)
+}
 
+func (s LineReplacer) Replace(pattern *regexp.Regexp, subject, replace string) string {
 	return pattern.ReplaceAllString(subject, replace)
 }
 
@@ -33,20 +35,9 @@ func (s LineReplacer) Replace(subject, search, replace string) string {
  * ReplaceStringRange replaces a given string or pattern when found in a range defined in `stringRange`
  * All other matches found out of the supplied range are ignored and therefore, not replaced 
  */
-func (r LineReplacer) ReplaceStringRange(subject, search, replace string, stringRange [2]int) string {
+func (r LineReplacer) ReplaceStringRange(pattern *regexp.Regexp, subject, replace string, stringRange [2]int) string {
 	var prepend, append []byte
 
-	searchWithModifiers := search
-
-	if r.flags["literal"] {
-		searchWithModifiers = regexp.QuoteMeta(search)
-	}
-
-	if r.flags["insensitive"] {
-		searchWithModifiers = "(?i)" + search
-	}
-
-	pattern := regexp.MustCompile(searchWithModifiers)
 	subjectSubstring := []byte(subject)[stringRange[0]:stringRange[1]]
 	replaced := pattern.ReplaceAll(subjectSubstring, []byte(replace))
 

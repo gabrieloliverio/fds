@@ -47,8 +47,9 @@ func main() {
 
 	if args.Path.Value == "" {
 		replacer := replace.NewReplacer(flags)
+		pattern := replacer.CompilePattern(args.Search)
 
-		fmt.Print(replacer.Replace(args.Subject, args.Search, args.Replace))
+		fmt.Print(replacer.Replace(pattern, args.Subject, args.Replace))
 
 		return
 	}

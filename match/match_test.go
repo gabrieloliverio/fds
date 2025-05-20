@@ -2,6 +2,7 @@ package match
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -9,26 +10,23 @@ func TestFindStringOrPattern(t *testing.T) {
 	var tests = []struct{
 		name string
 		subject string
-		search string
+		pattern *regexp.Regexp
 		replace string
-		flags map[string]bool
 		want []MatchString
 	}{
 		{
 			name: "no match",
-			search: "text",
+			pattern: regexp.MustCompile("text"),
 			subject: "foo",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{},
 		},
 		{
 			name: "single occurrence - no characters left and no characters right",
-			search: "text",
+			pattern: regexp.MustCompile("text"),
 			subject: "text",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -43,10 +41,9 @@ func TestFindStringOrPattern(t *testing.T) {
 		},
 		{
 			name: "single occurrence - few characters left and few characters right",
-			search: "text",
+			pattern: regexp.MustCompile("text"),
 			subject: "this is some text and that's it",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -61,10 +58,9 @@ func TestFindStringOrPattern(t *testing.T) {
 		},
 		{
 			name: "single occurrence - lots of characters left and lots of characters right",
-			search: "text",
+			pattern: regexp.MustCompile("text"),
 			subject: "this is some unnecessarily long text, and now I ran out of criativity",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -79,10 +75,9 @@ func TestFindStringOrPattern(t *testing.T) {
 		},
 		{
 			name: "single occurrence - exactly 20 characters left and right",
-			search: "text",
+			pattern: regexp.MustCompile("text"),
 			subject: "some random 20-char text some random 20-char",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -96,11 +91,10 @@ func TestFindStringOrPattern(t *testing.T) {
 			},
 		},
 		{
-			name: "single occurrence - exactly 20 characters left and right with literal flag",
-			search: "text",
+			name: "single occurrence - exactly 20 characters left and right literal",
+			pattern: regexp.MustCompile(regexp.QuoteMeta("text")),
 			subject: "some random 20-char text some random 20-char",
 			replace: "$1",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": true},
 
 			want: []MatchString{
 			    {
@@ -115,10 +109,9 @@ func TestFindStringOrPattern(t *testing.T) {
 		},
 		{
 			name: "single occurrence - exactly 20 characters left and right matching group",
-			search: "(text)",
+			pattern: regexp.MustCompile("(?i)(text)"),
 			subject: "some random 20-char text some random 20-char",
 			replace: "other $1",
-			flags: map[string]bool{"insensitive": true, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -132,11 +125,10 @@ func TestFindStringOrPattern(t *testing.T) {
 			},
 		},
 		{
-			name: "single occurrence - exactly 20 characters left and right with insensitive flag",
-			search: "TEXT",
+			name: "single occurrence - exactly 20 characters left and right insensitive",
+			pattern: regexp.MustCompile("(?i)TEXT"),
 			subject: "some random 20-char text some random 20-char",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": true, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -151,10 +143,9 @@ func TestFindStringOrPattern(t *testing.T) {
 		},
 		{
 			name: "single occurrence - with regular expression",
-			search: ".ext",
+			pattern: regexp.MustCompile(".ext"),
 			subject: "some random 20-char text some random 20-char",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -169,10 +160,9 @@ func TestFindStringOrPattern(t *testing.T) {
 		},
 		{
 			name: "multiple matches",
-			search: "text",
+			pattern: regexp.MustCompile("text"),
 			subject: "this is one text, this is another text, this is yet another text",
 			replace: "replacement",
-			flags: map[string]bool{"insensitive": false, "confirm": false, "literal": false},
 
 			want: []MatchString{
 			    {
@@ -205,7 +195,7 @@ func TestFindStringOrPattern(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := FindStringOrPattern(tc.search, tc.replace, tc.subject, tc.flags, 20)
+			result := FindStringOrPattern(tc.pattern, tc.replace, tc.subject, 20)
 			
 			if !reflect.DeepEqual(result, tc.want) {
 				t.Errorf("FindStringOrPattern() = %+v, want %+v", result, tc.want)

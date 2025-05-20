@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/match"
@@ -38,17 +39,17 @@ func NewFileReplacer(inputFile, outputFile *os.File, flags map[string]bool) File
 /*
  * ReplaceInFile replaces a given pattern when found in `inputFile`. Lines are written into `outputFile`
  */
-func (r FileReplacer) ReplaceInFile(search, replace string, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
+func (r FileReplacer) ReplaceInFile(pattern *regexp.Regexp, replace string, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
 	if r.flags["confirm"] {
-		err := r.confirmAndReplace(search, replace, stdin, confirmAnswer)
+		err := r.confirmAndReplace(pattern, replace, stdin, confirmAnswer)
 
 		return err
 	}
 
-	return r.replaceAll(search, replace)
+	return r.replaceAll(pattern, replace)
 }
 
-func (r FileReplacer) replaceAll(search, replace string) error {
+func (r FileReplacer) replaceAll(pattern *regexp.Regexp, replace string) error {
 	var err error
 
 	if inputFileStat, _ := r.inputFile.Stat(); inputFileStat.Size() == 0 {
@@ -65,7 +66,7 @@ func (r FileReplacer) replaceAll(search, replace string) error {
 			return fmt.Errorf("Error while reading file: %s", err)
 		}
 
-		replaced := r.LineReplacer.Replace(line, search, replace)
+		replaced := r.LineReplacer.Replace(pattern, line, replace)
 
 		_, errWrite := writer.WriteString(replaced)
 
@@ -84,7 +85,7 @@ func (r FileReplacer) replaceAll(search, replace string) error {
 
 }
 
-func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
+func (r FileReplacer) confirmAndReplace(pattern *regexp.Regexp, replace string, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
 	var replacer = NewReplacer(r.flags)
 	var lineNumber int
 	var confirmedAll, confirmedQuit bool
@@ -108,13 +109,13 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File, 
 		}
 
 		if confirmedAll {
-			line = replacer.Replace(line, search, replace)
+			line = replacer.Replace(pattern, line, replace)
 		}
 
 		if !confirmedAll && !confirmedQuit  {
-			matches := match.FindStringOrPattern(search, replace, line, r.flags, 50)
+			matches := match.FindStringOrPattern(pattern, replace, line, 50)
 
-			line = r.confirmMatches(matches, line, search, replace, lineNumber, stdin, confirmAnswer)
+			line = r.confirmMatches(matches, line, replace, pattern, lineNumber, stdin, confirmAnswer)
 		}
 
 		_, errWrite := writer.WriteString(line)
@@ -133,7 +134,7 @@ func (r FileReplacer) confirmAndReplace(search, replace string, stdin *os.File, 
 	return nil
 }
 
-func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, replace string, lineNumber int, stdin *os.File, confirmAnswer *input.ConfirmAnswer) string {
+func (r FileReplacer) confirmMatches(matches []match.MatchString, line, replace string, pattern *regexp.Regexp, lineNumber int, stdin *os.File, confirmAnswer *input.ConfirmAnswer) string {
 	var answer rune
 	var err error
 
@@ -166,11 +167,11 @@ func (r FileReplacer) confirmMatches(matches []match.MatchString, line, search, 
 
 		switch answer {
 		case ConfirmYes:
-			replacedLine = r.LineReplacer.ReplaceStringRange(replacedLine, search, replace, stringRange)
+			replacedLine = r.LineReplacer.ReplaceStringRange(pattern, replacedLine, replace, stringRange)
 		case ConfirmNo:
 			// Nothing to do
 		case ConfirmAll:
-			replacedLine = r.LineReplacer.ReplaceStringRange(replacedLine, search, replace, stringRange)
+			replacedLine = r.LineReplacer.ReplaceStringRange(pattern, replacedLine, replace, stringRange)
 			confirmedAll = true
 		default:
 			confirmedQuit = true

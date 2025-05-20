@@ -96,12 +96,12 @@ func TestLineReplacer_Replace(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			replacer := NewReplacer(tc.flags)
-			result := replacer.Replace(tc.subject, tc.search, tc.replace)
+			pattern := replacer.CompilePattern(tc.search)
+			result := replacer.Replace(pattern, tc.subject, tc.replace)
 
 			if !tc.want.MatchString(result) {
 				t.Errorf(`Replacer.Replace() = "%q", want "%#v"`, result, tc.want)
 			}
-
 		})
 	}
 }
@@ -158,7 +158,8 @@ func TestLineReplacer_ReplaceStringRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			replacer := NewReplacer(tc.flags)
-			result := replacer.ReplaceStringRange(tc.subject, tc.search, tc.replace, tc.stringRange)
+			pattern := replacer.CompilePattern(tc.search)
+			result := replacer.ReplaceStringRange(pattern, tc.subject, tc.replace, tc.stringRange)
 
 			if result != tc.want {
 				t.Errorf("ReplaceMatch() = %s, want %s", result, tc.want)

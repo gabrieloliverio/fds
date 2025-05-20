@@ -28,7 +28,9 @@ func ReplaceInFile(path string, args input.Args, flags map[string]bool, confirmA
 		log.Printf("Replacing %s for %s in file %s", args.Search, args.Replace, path)
 	}
 
-	err = replacer.ReplaceInFile(args.Search, args.Replace, os.Stdin, confirmAnswer)
+	pattern := replacer.CompilePattern(args.Search)
+
+	err = replacer.ReplaceInFile(pattern, args.Replace, os.Stdin, confirmAnswer)
 
 	CheckError(err)
 
