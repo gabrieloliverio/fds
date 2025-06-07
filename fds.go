@@ -11,74 +11,77 @@ import (
 	"github.com/gabrieloliverio/fds/replace"
 )
 
-func ReplaceInFile(path string, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
-	inputFile, tmpFile, err := replace.OpenInputAndTempFile(path)
-
-	CheckError(err)
-
-	defer inputFile.Close()
-	defer tmpFile.Close()
-
-	inputStat, _ := inputFile.Stat()
+func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
+	inputStat, _ := os.Stat(args.Path.Value)
 	originalModTime := inputStat.ModTime()
 
-	replacer := replace.NewFileReplacer(inputFile, tmpFile, flags)
-
-	if flags["verbose"] {
-		log.Printf("Replacing %s for %s in file %s", args.Search, args.Replace, path)
+	if replacer.HasFlag("verbose") {
+		log.Printf("Replacing %s for %s in file %s", args.Search, args.Replace, args.Path.Value)
 	}
 
-	pattern := replacer.CompilePattern(args.Search)
-
-	err = replacer.ReplaceInFile(pattern, args.Replace, os.Stdin, confirmAnswer)
+	tmpFile, fileChanged, err := replacer.Replace(os.Stdin, confirmAnswer)
 
 	CheckError(err)
 
-	inputStat, _ = inputFile.Stat()
+	if !fileChanged {
+		if replacer.HasFlag("verbose") {
+			log.Printf("Nothing replaced in file %s. Removing temp file", args.Path.Value)
+		}
+
+		os.Remove(tmpFile.Name())
+
+		return nil
+	}
+
+	inputStat, _ = os.Stat(args.Path.Value)
 	inputFileHasChanged := inputStat.ModTime().After(originalModTime)
 	renameFile := true
 
-	if flags["verbose"] {
+	if replacer.HasFlag("verbose") {
 		log.Printf("Replace in temp file completed")
-		log.Printf("Original timestamp of file %s: %s", path, originalModTime)
+		log.Printf("Original timestamp of file %s: %s", args.Path.Value, originalModTime)
 	}
 
 	if inputFileHasChanged {
-		if flags["verbose"] {
-			log.Printf("File %s has been modified since %s", path, originalModTime)
+		if replacer.HasFlag("verbose") {
+			log.Printf("File %s has been modified since %s", args.Path.Value, originalModTime)
 		}
 
-		confirmText := fmt.Sprintf("File %s was modified after initial read. Overwrite anyway? [y]es [n]o", path)
-		answer, _ := input.Confirm(os.Stdin, confirmText, []rune{'y', 'n'})
+		confirmText := fmt.Sprintf("File %s was modified after initial read. Overwrite anyway? [y]es [n]o", args.Path.Value)
+		answer, _ := input.Confirm(stdin, confirmText, []rune{'y', 'n'})
 
 		if answer == 'n' {
 			renameFile = false
 
-			if flags["verbose"] && inputFileHasChanged {
-				log.Printf("File %s will not be overwritten", path)
+			if replacer.HasFlag("verbose") && inputFileHasChanged {
+				log.Printf("File %s will not be overwritten", args.Path.Value)
 			}
 		}
 	}
 
 	if renameFile {
-		if flags["verbose"] && inputFileHasChanged {
-			log.Printf("Overwriting file %s with contents from temp file", path)
+		if replacer.HasFlag("verbose") && inputFileHasChanged {
+			log.Printf("Overwriting file %s with contents from temp file", args.Path.Value)
 		}
 
-		err = os.Rename(tmpFile.Name(), inputFile.Name())
+		err = os.Rename(tmpFile.Name(), args.Path.Value)
 		CheckError(err)
 
-		if flags["verbose"] {
-			log.Printf("Renamed temp file %s to %s", tmpFile.Name(), inputFile.Name())
+		if replacer.HasFlag("verbose") {
+			log.Printf("Renamed temp file %s to %s", tmpFile.Name(), args.Path.Value)
 		}
 	}
 
 	return err
 }
 
-func ReplaceInFiles(files []string, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
+func ReplaceInFiles(files []string, stdin *os.File, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
 	for _, file := range files {
-		err := ReplaceInFile(file, args, flags, confirmAnswer)
+		args.Path.Value = file
+
+		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, flags)
+
+		err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
 		if err != nil {
 			return err

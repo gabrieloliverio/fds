@@ -12,11 +12,11 @@ import (
 
 func main() {
 	var (
-		literal, insensitive, confirm, verbose    bool
-		ignoreGlobs                               input.IgnoreGlobs
-		err                                       error
-		defaultAnswer                             = input.ConfirmAnswer('n')
-		confirmAnswer                             = &defaultAnswer
+		literal, insensitive, confirm, verbose bool
+		ignoreGlobs                            input.IgnoreGlobs
+		err                                    error
+		defaultAnswer                          = input.ConfirmAnswer('n')
+		confirmAnswer                          = &defaultAnswer
 	)
 
 	flag.Usage = func() { fmt.Fprint(os.Stderr, input.Usage) }
@@ -46,16 +46,17 @@ func main() {
 	fds.CheckError(err)
 
 	if args.Path.Value == "" {
-		replacer := replace.NewReplacer(flags)
-		pattern := replacer.CompilePattern(args.Search)
+		replacer := replace.NewLineReplacer(args.Search, args.Replace, flags)
 
-		fmt.Print(replacer.Replace(pattern, args.Subject, args.Replace))
+		fmt.Print(replacer.Replace(args.Subject))
 
 		return
 	}
 
 	if args.Path.IsFile() {
-		err := fds.ReplaceInFile(args.Path.Value, args, flags, confirmAnswer)
+		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, flags)
+
+		err = fds.ReplaceInFile(args, replacer, os.Stdin, confirmAnswer)
 		fds.CheckError(err)
 
 		return
@@ -64,7 +65,6 @@ func main() {
 	files, err := fds.GetFilesInDir(args.Path.Value, ignoreGlobs, verbose)
 	fds.CheckError(err)
 
-	err = fds.ReplaceInFiles(files, args, flags, confirmAnswer)
+	err = fds.ReplaceInFiles(files, os.Stdin, args, flags, confirmAnswer)
 	fds.CheckError(err)
 }
-

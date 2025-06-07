@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gabrieloliverio/fds/input"
+	"github.com/gabrieloliverio/fds/replace"
 )
 
 func TestReplaceInFile(t *testing.T) {
@@ -20,8 +21,11 @@ func TestReplaceInFile(t *testing.T) {
 	args := input.Args{Path: input.PathArg{Value: inputPath}, Search: "Lorem", Replace: "mamãe"}
 	flags := map[string]bool{}
 	var confirmAnswer *input.ConfirmAnswer
+	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
-	err := ReplaceInFile(inputPath, args, flags, confirmAnswer)
+	var replacer = replace.NewFileReplacer(inputPath, args.Search, args.Replace, flags)
+
+	err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
@@ -46,10 +50,12 @@ func TestReplaceInFiles(t *testing.T) {
 	inputPath2 := path.Join(tempDir, "input2")
 	createTestFile(tempDir, "input2", "Lorem ipsum dolor sit amet", t)
 
+	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
+
 	args := input.Args{Path: input.PathArg{Value: inputPath1}, Search: "Lorem", Replace: "mamãe"}
 	flags := map[string]bool{}
 
-	err := ReplaceInFiles([]string{inputPath1, inputPath2}, args, flags, &defaultAnswer)
+	err := ReplaceInFiles([]string{inputPath1, inputPath2}, stdin, args, flags, &defaultAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
