@@ -1,4 +1,4 @@
-package match
+package replace
 
 import (
 	"fmt"
