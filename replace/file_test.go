@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	"github.com/gabrieloliverio/fds/config"
 )
 
 func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
@@ -16,13 +18,14 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
+	config := config.NewConfig()
+	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 	search := "text"
 	replace := "replacement"
 
-	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, flags)
+	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	outputFile, fileChanged, err := fileReplacer.Replace(stdin, nil)
+	outputFile, err := fileReplacer.Replace(stdin, nil)
 	defer os.Remove(outputFile.Name())
 
 	if err != nil {
@@ -36,11 +39,10 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 		t.Fatalf("Failed to read output file after find/replace: %s", err)
 	}
 
-	wantText := "this is some replacement"
-	wantChanged := true
+	want:= "this is some replacement"
 
-	if string(result) != wantText || fileChanged != wantChanged {
-		t.Errorf(`ReplaceInFile(%s, %s) = %q, %t, want %q, %t`, search, replace, result, fileChanged, wantText, wantChanged)
+	if string(result) != want{
+		t.Errorf(`ReplaceInFile(%s, %s) = %q, want %qt`, search, replace, result, want)
 	}
 }
 
@@ -53,14 +55,15 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
+	config := config.NewConfig()
+	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
 	search := "text"
 	replace := "replacement"
 
-	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, flags)
+	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	outputFile, fileChanged, err := fileReplacer.Replace(stdin, nil)
+	outputFile, err := fileReplacer.Replace(stdin, nil)
 	defer os.Remove(outputFile.Name())
 
 	if err != nil {
@@ -73,15 +76,15 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 		t.Fatalf("Failed to read output file after find/replace: %s", err)
 	}
 
-	wantText := "this is some replacement\nthis is some other replacement\n"
-	wantChanged := true
+	want:= "this is some replacement\nthis is some other replacement\n"
 
-	if string(result) != wantText || fileChanged != wantChanged {
-		t.Errorf(`ReplaceInFile(%s, %s) = %q, %t, want %q, %t`, search, replace, result, fileChanged, wantText, wantChanged)
+	if string(result) != want{
+		t.Errorf(`ReplaceInFile(%s, %s) = %q, want %q`, search, replace, result, want)
 	}
 }
 
 func TestReplaceInFile_NotFound(t *testing.T) {
+	var result []byte
 	tempDir := t.TempDir()
 
 	inputFile := createFiles(tempDir, "this is some text\nthis is some other text\n", t)
@@ -90,31 +93,25 @@ func TestReplaceInFile_NotFound(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	flags := map[string]bool{"insensitive": false, "confirm": false, "literal": false}
+	config := config.NewConfig()
+	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
 	search := "foo"
 	replace := "replacement"
 
-	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, flags)
+	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	outputFile, fileChanged, err := fileReplacer.Replace(stdin, nil)
-	defer os.Remove(outputFile.Name())
+	outputFile, err := fileReplacer.Replace(stdin, nil)
+	if outputFile != nil {
+		result, err = os.ReadFile(outputFile.Name())
+	}
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)
 	}
 
-	result, err := os.ReadFile(outputFile.Name())
-
-	if err != nil {
-		t.Fatalf("Failed to read output file after find/replace: %s", err)
-	}
-
-	wantText := "this is some text\nthis is some other text\n"
-	wantChanged := false
-
-	if string(result) != wantText || fileChanged != wantChanged {
-		t.Errorf(`ReplaceInFile(%s, %s) = %q, %t, want %q, %t`, search, replace, result, fileChanged, wantText, wantChanged)
+	if outputFile != nil {
+		t.Errorf(`ReplaceInFile(%s, %s) should have returned nil as output file. File with content %q returned`, search, replace, result)
 	}
 }
 

@@ -71,7 +71,6 @@ fds "foo" "bar" ./dir/**/*.txt
 - [x] Directories
 - [x] Glob
 - [x] Accept --ignore-globs
-- [ ] Catch interrupt signal to clean up temp files
+- [ ] Concurrency when reading/writing several files
 - [ ] Ignore files listed in .gitignore
 - [ ] Multiple files, directories and/or globs
-- [ ] Concurrency when reading/writing several files

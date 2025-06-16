@@ -2,11 +2,13 @@ package replace
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/gabrieloliverio/fds/config"
 	"github.com/gabrieloliverio/fds/input"
 )
 
@@ -22,11 +24,16 @@ const (
 type FileReplacer struct {
 	LineReplacer
 
+	config config.Config
 	inputFilePath string
 }
 
-func NewFileReplacer(inputFilePath, search, replace string, flags map[string]bool) FileReplacer {
-	replacer := FileReplacer{LineReplacer: LineReplacer{flags: flags, replace: replace}, inputFilePath: inputFilePath}
+func NewFileReplacer(inputFilePath, search, replace string, config config.Config) FileReplacer {
+	replacer := FileReplacer{
+		LineReplacer: LineReplacer{flags: config.Flags, replace: replace},
+		inputFilePath: inputFilePath,
+		config: config,
+	}
 	replacer.search = replacer.compilePattern(search)
 
 	return replacer
@@ -35,9 +42,9 @@ func NewFileReplacer(inputFilePath, search, replace string, flags map[string]boo
 /*
  * ReplaceInFile replaces a given pattern when found in `inputFile`. Lines are written into `outputFile`
  */
-func (r FileReplacer) Replace(stdin *os.File, confirmAnswer *input.ConfirmAnswer) (outputFile *os.File, fileChanged bool, err error) {
+func (r FileReplacer) Replace(stdin *os.File, confirmAnswer *input.ConfirmAnswer) (outputFile *os.File, err error) {
 	if r.flags["confirm"] {
-		outputFile, fileChanged, err = r.confirmAndReplace(stdin, confirmAnswer)
+		outputFile, err = r.confirmAndReplace(stdin, confirmAnswer)
 
 		return
 	}
@@ -45,10 +52,10 @@ func (r FileReplacer) Replace(stdin *os.File, confirmAnswer *input.ConfirmAnswer
 	return r.replaceAll()
 }
 
-func (r FileReplacer) replaceAll() (tmpFile *os.File, fileChanged bool, err error) {
+func (r FileReplacer) replaceAll() (tmpFile *os.File, err error) {
+	var fileChanged bool
+
 	inputFile, err := openInputFile(r.inputFilePath)
-	tmpFile, _ = os.CreateTemp("", filepath.Base(inputFile.Name()))
-	writer := bufio.NewWriter(tmpFile)
 
 	if err != nil {
 		return
@@ -60,11 +67,14 @@ func (r FileReplacer) replaceAll() (tmpFile *os.File, fileChanged bool, err erro
 
 	reader := bufio.NewReader(inputFile)
 
+	buffer := &bytes.Buffer{}
+	writer := bufio.NewWriter(buffer)
+
 	for {
 		line, err := reader.ReadString('\n')
 
 		if err != nil && err != io.EOF {
-			return nil, false, fmt.Errorf("Error while reading file: %s", err)
+			return nil, fmt.Errorf("Error while reading file: %s", err)
 		}
 
 		replacedLine, lineChanged := r.LineReplacer.Replace(line)
@@ -73,11 +83,10 @@ func (r FileReplacer) replaceAll() (tmpFile *os.File, fileChanged bool, err erro
 			fileChanged = true
 		}
 
-		// TODO: Only create temp file when there is a change
 		_, errWrite := writer.WriteString(replacedLine)
 
 		if errWrite != nil {
-			return nil, false, fmt.Errorf("Error while writing temporary file: %s", err)
+			return nil, fmt.Errorf("Error while writing temporary file: %s", err)
 		}
 
 		if err != nil && err == io.EOF {
@@ -87,7 +96,12 @@ func (r FileReplacer) replaceAll() (tmpFile *os.File, fileChanged bool, err erro
 
 	writer.Flush()
 
-	return tmpFile, fileChanged, err
+	if fileChanged {
+		tmpFile, _ = os.CreateTemp("", filepath.Base(inputFile.Name()))
+		io.Copy(tmpFile, buffer)
+	}
+
+	return tmpFile, err
 }
 
 func openInputFile(path string) (*os.File, error) {

@@ -8,22 +8,24 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gabrieloliverio/fds/config"
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/replace"
 )
 
-func TestReplaceInFile(t *testing.T) {
+func TestReplaceInFile_RenameTmpFileToOriginalFileWhenNotNil(t *testing.T) {
 	tempDir := t.TempDir()
 	inputPath := path.Join(tempDir, "input")
 
 	createTestFile(tempDir, "input", "Lorem ipsum dolor sit amet", t)
 
 	args := input.Args{Path: input.PathArg{Value: inputPath}, Search: "Lorem", Replace: "mamãe"}
-	flags := map[string]bool{}
+	config := config.NewConfig()
+	config.Flags = map[string]bool{}
 	var confirmAnswer *input.ConfirmAnswer
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
-	var replacer = replace.NewFileReplacer(inputPath, args.Search, args.Replace, flags)
+	var replacer = replace.NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
 	err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
@@ -36,6 +38,41 @@ func TestReplaceInFile(t *testing.T) {
 
 	if result := string(result); result != want {
 		t.Errorf(`ReplaceInFile() = %q, want %q`, result, want)
+	}
+}
+
+func TestReplaceInFile_LeavesFileUntouchedWhenNothingWasReplaced(t *testing.T) {
+	tempDir := t.TempDir()
+	inputPath := path.Join(tempDir, "input")
+
+	createTestFile(tempDir, "input", "Lorem ipsum dolor sit amet", t)
+	originalStat, err := os.Stat(inputPath)
+
+	args := input.Args{Path: input.PathArg{Value: inputPath}, Search: "no existe", Replace: "bar"}
+	config := config.NewConfig()
+	config.Flags = map[string]bool{}
+	var confirmAnswer *input.ConfirmAnswer
+	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
+
+	var replacer = replace.NewFileReplacer(inputPath, args.Search, args.Replace, config)
+
+	err = ReplaceInFile(args, replacer, stdin, confirmAnswer)
+
+	if err != nil {
+		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
+	}
+
+	statAfterReplace, err := os.Stat(inputPath)
+
+	result, err := os.ReadFile(inputPath)
+	want := "Lorem ipsum dolor sit amet"
+
+	if result := string(result); result != want {
+		t.Errorf(`ReplaceInFile() = %q, want %q`, result, want)
+	}
+
+	if originalStat.ModTime().Unix() < statAfterReplace.ModTime().Unix() {
+		t.Errorf(`ReplaceInFile() replaced input file when nothing was replaced in its content`)
 	}
 }
 
@@ -53,9 +90,11 @@ func TestReplaceInFiles(t *testing.T) {
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
 	args := input.Args{Path: input.PathArg{Value: inputPath1}, Search: "Lorem", Replace: "mamãe"}
-	flags := map[string]bool{}
 
-	err := ReplaceInFiles([]string{inputPath1, inputPath2}, stdin, args, flags, &defaultAnswer)
+	config := config.NewConfig()
+	config.Flags = map[string]bool{}
+
+	err := ReplaceInFiles([]string{inputPath1, inputPath2}, stdin, args, config, &defaultAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)

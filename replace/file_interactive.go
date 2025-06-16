@@ -2,6 +2,7 @@ package replace
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -10,19 +11,19 @@ import (
 	"github.com/gabrieloliverio/fds/input"
 )
 
-func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.ConfirmAnswer) (outputFile *os.File, fileChanged bool, err error) {
+func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.ConfirmAnswer) (outputFile *os.File, err error) {
 	var (
 		lineNumber                  int
+		tmpFile *os.File
 		confirmedAll, confirmedQuit bool
 		lineChanged                 bool
+		fileChanged bool
 	)
 
 	// feedback confirmedAll that propagated all the way back to the main function
 	confirmedAll = *confirmAnswer == ConfirmAll
 
 	inputFile, err := openInputFile(r.inputFilePath)
-	tmpFile, _ := os.CreateTemp("", filepath.Base(inputFile.Name()))
-	writer := bufio.NewWriter(tmpFile)
 
 	if err != nil {
 		return
@@ -34,12 +35,16 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.Con
 
 	reader := bufio.NewReader(inputFile)
 
+	buffer := &bytes.Buffer{}
+	writer := bufio.NewWriter(buffer)
+
+
 	for {
 		line, err := reader.ReadString('\n')
 		lineNumber++
 
 		if err != nil && err != io.EOF {
-			return nil, false, fmt.Errorf("Error while reading file: %s", err)
+			return nil, fmt.Errorf("Error while reading file: %s", err)
 		}
 
 		if confirmedAll {
@@ -59,7 +64,7 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.Con
 		_, errWrite := writer.WriteString(line)
 
 		if errWrite != nil {
-			return nil, false, fmt.Errorf("Error while writing temporary file: %s", err)
+			return nil, fmt.Errorf("Error while writing temporary file: %s", err)
 		}
 
 		if err != nil && err == io.EOF {
@@ -69,7 +74,12 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.Con
 
 	writer.Flush()
 
-	return tmpFile, fileChanged, nil
+	if fileChanged {
+		tmpFile, _ = os.CreateTemp("", filepath.Base(inputFile.Name()))
+		io.Copy(tmpFile, buffer)
+	}
+
+	return tmpFile, nil
 }
 
 func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNumber int, stdin *os.File, confirmAnswer *input.ConfirmAnswer) (replacedLine string, lineChanged bool) {

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gabrieloliverio/fds"
+	"github.com/gabrieloliverio/fds/config"
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/replace"
 )
@@ -37,16 +38,17 @@ func main() {
 
 	flag.Parse()
 
-	flags := map[string]bool{"confirm": confirm, "insensitive": insensitive, "literal": literal, "verbose": verbose}
+	config := config.NewConfig()
+	config.Flags = map[string]bool{"confirm": confirm, "insensitive": insensitive, "literal": literal, "verbose": verbose}
 
 	args, err := input.ReadArgs(os.Stdin, flag.Args())
 	fds.CheckError(err)
 
-	err = input.Validate(args, flags)
+	err = input.Validate(args, config.Flags)
 	fds.CheckError(err)
 
 	if args.Path.Value == "" {
-		replacer := replace.NewLineReplacer(args.Search, args.Replace, flags)
+		replacer := replace.NewLineReplacer(args.Search, args.Replace, config.Flags)
 
 		fmt.Print(replacer.Replace(args.Subject))
 
@@ -54,7 +56,7 @@ func main() {
 	}
 
 	if args.Path.IsFile() {
-		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, flags)
+		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
 
 		err = fds.ReplaceInFile(args, replacer, os.Stdin, confirmAnswer)
 		fds.CheckError(err)
@@ -65,6 +67,6 @@ func main() {
 	files, err := fds.GetFilesInDir(args.Path.Value, ignoreGlobs, verbose)
 	fds.CheckError(err)
 
-	err = fds.ReplaceInFiles(files, os.Stdin, args, flags, confirmAnswer)
+	err = fds.ReplaceInFiles(files, os.Stdin, args, config, confirmAnswer)
 	fds.CheckError(err)
 }

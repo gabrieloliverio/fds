@@ -7,11 +7,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gabrieloliverio/fds/config"
 	"github.com/gabrieloliverio/fds/input"
 	"github.com/gabrieloliverio/fds/replace"
 )
 
 func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
+	var err error
 	inputStat, _ := os.Stat(args.Path.Value)
 	originalModTime := inputStat.ModTime()
 
@@ -19,22 +21,20 @@ func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.Fil
 		log.Printf("Replacing %s for %s in file %s", args.Search, args.Replace, args.Path.Value)
 	}
 
-	tmpFile, fileChanged, err := replacer.Replace(os.Stdin, confirmAnswer)
+	tmpFile, err := replacer.Replace(os.Stdin, confirmAnswer)
 
 	CheckError(err)
 
-	if !fileChanged {
+	if tmpFile == nil {
 		if replacer.HasFlag("verbose") {
-			log.Printf("Nothing replaced in file %s. Removing temp file", args.Path.Value)
+			log.Printf("Nothing replaced in file %s", args.Path.Value)
 		}
-
-		os.Remove(tmpFile.Name())
 
 		return nil
 	}
 
 	inputStat, _ = os.Stat(args.Path.Value)
-	inputFileHasChanged := inputStat.ModTime().After(originalModTime)
+	inputFileChangedSinceRead := inputStat.ModTime().After(originalModTime)
 	renameFile := true
 
 	if replacer.HasFlag("verbose") {
@@ -42,7 +42,7 @@ func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.Fil
 		log.Printf("Original timestamp of file %s: %s", args.Path.Value, originalModTime)
 	}
 
-	if inputFileHasChanged {
+	if inputFileChangedSinceRead {
 		if replacer.HasFlag("verbose") {
 			log.Printf("File %s has been modified since %s", args.Path.Value, originalModTime)
 		}
@@ -53,14 +53,15 @@ func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.Fil
 		if answer == 'n' {
 			renameFile = false
 
-			if replacer.HasFlag("verbose") && inputFileHasChanged {
+			if replacer.HasFlag("verbose") && inputFileChangedSinceRead {
 				log.Printf("File %s will not be overwritten", args.Path.Value)
+				err = fmt.Errorf("File %s was overritten since it was read. Operation aborted", args.Path.Value)
 			}
 		}
 	}
 
 	if renameFile {
-		if replacer.HasFlag("verbose") && inputFileHasChanged {
+		if replacer.HasFlag("verbose") && inputFileChangedSinceRead {
 			log.Printf("Overwriting file %s with contents from temp file", args.Path.Value)
 		}
 
@@ -75,11 +76,11 @@ func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.Fil
 	return err
 }
 
-func ReplaceInFiles(files []string, stdin *os.File, args input.Args, flags map[string]bool, confirmAnswer *input.ConfirmAnswer) error {
+func ReplaceInFiles(files []string, stdin *os.File, args input.Args, config config.Config, confirmAnswer *input.ConfirmAnswer) error {
 	for _, file := range files {
 		args.Path.Value = file
 
-		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, flags)
+		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
 
 		err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
@@ -128,7 +129,7 @@ func GetFilesInDir(root string, ignoreGlobs input.IgnoreGlobs, verbose bool) ([]
 	}
 
 	if verbose {
-		log.Printf("Found %d files: %s\n", len(filepaths), filepaths)
+		log.Printf("Found %d files in %s", len(filepaths), root)
 	}
 
 	return filepaths, nil
