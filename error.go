@@ -1,10 +1,10 @@
-package input
+package fds
 
 import "fmt"
 
 type Error struct {
 	message string
-	Code int
+	Code    int
 }
 
 func (u Error) Error() string {
@@ -32,9 +32,9 @@ func NewConfirmNotOnFileError() Error {
 }
 
 type ConfirmError struct {
-	input rune
+	input   rune
 	message string
-	Code int
+	Code    int
 }
 
 func (e ConfirmError) Error() string {
@@ -44,7 +44,7 @@ func (e ConfirmError) Error() string {
 func NewInvalidConfirmInputError(input rune) ConfirmError {
 	return ConfirmError{
 		message: "Invalid input",
-		input: input,
-		Code: 46,
+		input:   input,
+		Code:    46,
 	}
 }

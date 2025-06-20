@@ -1,4 +1,4 @@
-package replace
+package fds
 
 import (
 	"bufio"
@@ -7,9 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	"github.com/gabrieloliverio/fds/config"
-	"github.com/gabrieloliverio/fds/input"
 )
 
 const (
@@ -24,15 +21,15 @@ const (
 type FileReplacer struct {
 	LineReplacer
 
-	config config.Config
+	config        Config
 	inputFilePath string
 }
 
-func NewFileReplacer(inputFilePath, search, replace string, config config.Config) FileReplacer {
+func NewFileReplacer(inputFilePath, search, replace string, config Config) FileReplacer {
 	replacer := FileReplacer{
-		LineReplacer: LineReplacer{flags: config.Flags, replace: replace},
+		LineReplacer:  LineReplacer{flags: config.Flags, replace: replace},
 		inputFilePath: inputFilePath,
-		config: config,
+		config:        config,
 	}
 	replacer.search = replacer.compilePattern(search)
 
@@ -42,7 +39,7 @@ func NewFileReplacer(inputFilePath, search, replace string, config config.Config
 /*
  * ReplaceInFile replaces a given pattern when found in `inputFile`. Lines are written into `outputFile`
  */
-func (r FileReplacer) Replace(stdin *os.File, confirmAnswer *input.ConfirmAnswer) (outputFile *os.File, err error) {
+func (r FileReplacer) Replace(stdin *os.File, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	if r.flags["confirm"] {
 		outputFile, err = r.confirmAndReplace(stdin, confirmAnswer)
 

@@ -1,4 +1,4 @@
-package replace
+package fds
 
 import (
 	"bufio"
@@ -7,17 +7,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	"github.com/gabrieloliverio/fds/input"
 )
 
-func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.ConfirmAnswer) (outputFile *os.File, err error) {
+func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	var (
 		lineNumber                  int
-		tmpFile *os.File
+		tmpFile                     *os.File
 		confirmedAll, confirmedQuit bool
 		lineChanged                 bool
-		fileChanged bool
+		fileChanged                 bool
 	)
 
 	// feedback confirmedAll that propagated all the way back to the main function
@@ -37,7 +35,6 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.Con
 
 	buffer := &bytes.Buffer{}
 	writer := bufio.NewWriter(buffer)
-
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -82,7 +79,7 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *input.Con
 	return tmpFile, nil
 }
 
-func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNumber int, stdin *os.File, confirmAnswer *input.ConfirmAnswer) (replacedLine string, lineChanged bool) {
+func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNumber int, stdin *os.File, confirmAnswer *ConfirmAnswer) (replacedLine string, lineChanged bool) {
 	var answer rune
 	var err error
 
@@ -106,7 +103,7 @@ func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNum
 			answer = ConfirmYes
 		} else {
 			answer, err = ConfirmMatch(thisMatch, r.inputFilePath, lineNumber, stdin)
-			*confirmAnswer = input.ConfirmAnswer(answer)
+			*confirmAnswer = ConfirmAnswer(answer)
 		}
 
 		if err != nil {

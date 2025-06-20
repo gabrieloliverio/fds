@@ -1,12 +1,10 @@
-package replace
+package fds
 
 import (
 	"fmt"
 	"os"
 	"path"
 	"testing"
-
-	"github.com/gabrieloliverio/fds/config"
 )
 
 func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
@@ -18,7 +16,7 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 	search := "text"
 	replace := "replacement"
@@ -39,9 +37,9 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 		t.Fatalf("Failed to read output file after find/replace: %s", err)
 	}
 
-	want:= "this is some replacement"
+	want := "this is some replacement"
 
-	if string(result) != want{
+	if string(result) != want {
 		t.Errorf(`ReplaceInFile(%s, %s) = %q, want %qt`, search, replace, result, want)
 	}
 }
@@ -55,7 +53,7 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
 	search := "text"
@@ -76,9 +74,9 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 		t.Fatalf("Failed to read output file after find/replace: %s", err)
 	}
 
-	want:= "this is some replacement\nthis is some other replacement\n"
+	want := "this is some replacement\nthis is some other replacement\n"
 
-	if string(result) != want{
+	if string(result) != want {
 		t.Errorf(`ReplaceInFile(%s, %s) = %q, want %q`, search, replace, result, want)
 	}
 }
@@ -93,7 +91,7 @@ func TestReplaceInFile_NotFound(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
 
 	search := "foo"

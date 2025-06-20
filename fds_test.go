@@ -7,10 +7,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-
-	"github.com/gabrieloliverio/fds/config"
-	"github.com/gabrieloliverio/fds/input"
-	"github.com/gabrieloliverio/fds/replace"
 )
 
 func TestReplaceInFile_RenameTmpFileToOriginalFileWhenNotNil(t *testing.T) {
@@ -19,13 +15,13 @@ func TestReplaceInFile_RenameTmpFileToOriginalFileWhenNotNil(t *testing.T) {
 
 	createTestFile(tempDir, "input", "Lorem ipsum dolor sit amet", t)
 
-	args := input.Args{Path: input.PathArg{Value: inputPath}, Search: "Lorem", Replace: "mamãe"}
-	config := config.NewConfig()
+	args := Args{Path: PathArg{Value: inputPath}, Search: "Lorem", Replace: "mamãe"}
+	config := NewConfig()
 	config.Flags = map[string]bool{}
-	var confirmAnswer *input.ConfirmAnswer
+	var confirmAnswer *ConfirmAnswer
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
-	var replacer = replace.NewFileReplacer(inputPath, args.Search, args.Replace, config)
+	var replacer = NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
 	err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
@@ -48,13 +44,13 @@ func TestReplaceInFile_LeavesFileUntouchedWhenNothingWasReplaced(t *testing.T) {
 	createTestFile(tempDir, "input", "Lorem ipsum dolor sit amet", t)
 	originalStat, err := os.Stat(inputPath)
 
-	args := input.Args{Path: input.PathArg{Value: inputPath}, Search: "no existe", Replace: "bar"}
-	config := config.NewConfig()
+	args := Args{Path: PathArg{Value: inputPath}, Search: "no existe", Replace: "bar"}
+	config := NewConfig()
 	config.Flags = map[string]bool{}
-	var confirmAnswer *input.ConfirmAnswer
+	var confirmAnswer *ConfirmAnswer
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
-	var replacer = replace.NewFileReplacer(inputPath, args.Search, args.Replace, config)
+	var replacer = NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
 	err = ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
@@ -79,7 +75,7 @@ func TestReplaceInFile_LeavesFileUntouchedWhenNothingWasReplaced(t *testing.T) {
 func TestReplaceInFiles(t *testing.T) {
 	tempDir := t.TempDir()
 
-	defaultAnswer := input.ConfirmAnswer('n')
+	defaultAnswer := ConfirmAnswer('n')
 
 	inputPath1 := path.Join(tempDir, "input1")
 	createTestFile(tempDir, "input1", "Lorem ipsum dolor sit amet", t)
@@ -89,9 +85,9 @@ func TestReplaceInFiles(t *testing.T) {
 
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
-	args := input.Args{Path: input.PathArg{Value: inputPath1}, Search: "Lorem", Replace: "mamãe"}
+	args := Args{Path: PathArg{Value: inputPath1}, Search: "Lorem", Replace: "mamãe"}
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{}
 
 	err := ReplaceInFiles([]string{inputPath1, inputPath2}, stdin, args, config, &defaultAnswer)
@@ -119,7 +115,7 @@ func TestGetFilesInDir_NoIgnoreGlobs_FindAllFiles(t *testing.T) {
 
 	createTreeStructure(tempDir)
 
-	result, err := GetFilesInDir(tempDir, input.IgnoreGlobs{}, false)
+	result, err := GetFilesInDir(tempDir, IgnoreGlobs{}, false)
 
 	if err != nil {
 		t.Errorf("GetFilesInDir() returned expected error")
@@ -147,7 +143,7 @@ func TestGetFilesInDir_IgnoreGlobs(t *testing.T) {
 
 	result, err := GetFilesInDir(
 		tempDir,
-		input.IgnoreGlobs{filepath.Join(tempDir, "dir2/**")},
+		IgnoreGlobs{filepath.Join(tempDir, "dir2/**")},
 		false,
 	)
 
@@ -174,7 +170,7 @@ func TestGetFilesInDir_IgnoreGlobs_ReturnsNoFiles(t *testing.T) {
 
 	result, err := GetFilesInDir(
 		tempDir,
-		input.IgnoreGlobs{filepath.Join(tempDir, "**")},
+		IgnoreGlobs{filepath.Join(tempDir, "**")},
 		false,
 	)
 

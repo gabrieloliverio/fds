@@ -1,12 +1,9 @@
-package replace
+package fds
 
 import (
 	"os"
 	"path"
 	"testing"
-
-	"github.com/gabrieloliverio/fds/config"
-	"github.com/gabrieloliverio/fds/input"
 )
 
 func TestReplaceInFile_ConfirmAll(t *testing.T) {
@@ -19,7 +16,7 @@ func TestReplaceInFile_ConfirmAll(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": true, "literal": false}
 
 	search := "text"
@@ -27,7 +24,7 @@ func TestReplaceInFile_ConfirmAll(t *testing.T) {
 
 	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	confirm := input.ConfirmAnswer('a')
+	confirm := ConfirmAnswer('a')
 	outputFile, err := fileReplacer.Replace(stdin, &confirm)
 	defer os.Remove(outputFile.Name())
 
@@ -59,7 +56,7 @@ func TestReplaceInFile_ConfirmNo(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": true, "literal": false}
 
 	search := "text"
@@ -67,7 +64,7 @@ func TestReplaceInFile_ConfirmNo(t *testing.T) {
 
 	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	confirm := input.ConfirmAnswer('n')
+	confirm := ConfirmAnswer('n')
 	outputFile, err := fileReplacer.Replace(stdin, &confirm)
 
 	if outputFile != nil {
@@ -94,7 +91,7 @@ func TestReplaceInFile_ConfirmQuit(t *testing.T) {
 	defer inputFile.Close()
 	defer stdin.Close()
 
-	config := config.NewConfig()
+	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": true, "literal": false}
 
 	search := "text"
@@ -102,7 +99,7 @@ func TestReplaceInFile_ConfirmQuit(t *testing.T) {
 
 	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	confirm := input.ConfirmAnswer('q')
+	confirm := ConfirmAnswer('q')
 	outputFile, err := fileReplacer.Replace(stdin, &confirm)
 
 	if err != nil {

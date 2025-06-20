@@ -1,4 +1,4 @@
-package replace
+package fds
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"regexp"
 
 	"github.com/fatih/color"
-	"github.com/gabrieloliverio/fds/input"
 )
 
 type MatchString struct {
@@ -29,7 +28,7 @@ func ConfirmMatch(match MatchString, filename string, lineNumber int, stdin *os.
 
 	confirmText := "[y]es [n]o [a]ll q[uit]"
 	valid := []rune{'y', 'n', 'a', 'q'}
-	ret, err := input.Confirm(stdin, confirmText, valid)
+	ret, err := Confirm(stdin, confirmText, valid)
 
 	if err != nil {
 		return 0, err

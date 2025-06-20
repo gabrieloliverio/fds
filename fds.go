@@ -6,13 +6,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/gabrieloliverio/fds/config"
-	"github.com/gabrieloliverio/fds/input"
-	"github.com/gabrieloliverio/fds/replace"
 )
 
-func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.File, confirmAnswer *input.ConfirmAnswer) error {
+func ReplaceInFile(args Args, replacer FileReplacer, stdin *os.File, confirmAnswer *ConfirmAnswer) error {
 	var err error
 	inputStat, _ := os.Stat(args.Path.Value)
 	originalModTime := inputStat.ModTime()
@@ -48,7 +44,7 @@ func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.Fil
 		}
 
 		confirmText := fmt.Sprintf("File %s was modified after initial read. Overwrite anyway? [y]es [n]o", args.Path.Value)
-		answer, _ := input.Confirm(stdin, confirmText, []rune{'y', 'n'})
+		answer, _ := Confirm(stdin, confirmText, []rune{'y', 'n'})
 
 		if answer == 'n' {
 			renameFile = false
@@ -76,11 +72,11 @@ func ReplaceInFile(args input.Args, replacer replace.FileReplacer, stdin *os.Fil
 	return err
 }
 
-func ReplaceInFiles(files []string, stdin *os.File, args input.Args, config config.Config, confirmAnswer *input.ConfirmAnswer) error {
+func ReplaceInFiles(files []string, stdin *os.File, args Args, config Config, confirmAnswer *ConfirmAnswer) error {
 	for _, file := range files {
 		args.Path.Value = file
 
-		replacer := replace.NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
+		replacer := NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
 
 		err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
 
@@ -88,7 +84,7 @@ func ReplaceInFiles(files []string, stdin *os.File, args input.Args, config conf
 			return err
 		}
 
-		if rune(*confirmAnswer) == replace.ConfirmQuit {
+		if rune(*confirmAnswer) == ConfirmQuit {
 			break
 		}
 	}
@@ -96,7 +92,7 @@ func ReplaceInFiles(files []string, stdin *os.File, args input.Args, config conf
 	return nil
 }
 
-func GetFilesInDir(root string, ignoreGlobs input.IgnoreGlobs, verbose bool) ([]string, error) {
+func GetFilesInDir(root string, ignoreGlobs IgnoreGlobs, verbose bool) ([]string, error) {
 	fileSystem := os.DirFS(root)
 	var filepaths []string
 
@@ -140,7 +136,7 @@ func CheckError(err error) {
 		return
 	}
 
-	if thrownErr, ok := err.(input.Error); ok {
+	if thrownErr, ok := err.(Error); ok {
 		fmt.Fprintln(os.Stderr, thrownErr.Error())
 		os.Exit(thrownErr.Code)
 	}

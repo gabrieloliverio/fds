@@ -1,4 +1,4 @@
-package input
+package fds
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	LiteralUsage = "Treat pattern as a regular string instead of as Regular Expression"
-	ConfirmUsage = "Confirm each substitution"
+	LiteralUsage     = "Treat pattern as a regular string instead of as Regular Expression"
+	ConfirmUsage     = "Confirm each substitution"
 	InsensitiveUsage = "Ignore case on search"
-	VerboseUsage = "Print debug information"
-	IgnoreUsage = "Ignore glob patterns, comma-separated. Ex. --ignore-globs \"vendor/**,node_modules/lib/**.js\""
-	HelpUsage = "Print out help"
+	VerboseUsage     = "Print debug information"
+	IgnoreUsage      = "Ignore glob patterns, comma-separated. Ex. --ignore-globs \"vendor/**,node_modules/lib/**.js\""
+	HelpUsage        = "Print out help"
 )
 
 var Usage = fmt.Sprintf(`fds is modern and opinionated find/replace CLI program
@@ -38,7 +38,7 @@ Options:
 `, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage, HelpUsage)
 
 type PathArg struct {
-	Value string
+	Value    string
 	fileInfo os.FileInfo
 }
 
@@ -58,7 +58,7 @@ type Args struct {
 	Path PathArg
 }
 
-func Validate(args Args, flags map[string] bool) error {
+func Validate(args Args, flags map[string]bool) error {
 	_, err := regexp.Compile(args.Search)
 
 	if !flags["literal"] && err != nil {
@@ -144,4 +144,3 @@ func (i IgnoreGlobs) MatchAny(filePath string) bool {
 
 	return false
 }
-
