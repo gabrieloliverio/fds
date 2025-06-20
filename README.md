@@ -4,7 +4,7 @@
 
 # `fds`
 
-Modern and opinionated find/replace CLI programme. Short version of **F**in**d** and **S**ubstitute, read as /fɔ.dɐ.s(ɨ)/ :).
+Modern and opinionated find/replace CLI program. Short version of **F**in**d** and **S**ubstitute, read as /fɔ.dɐ.s(ɨ)/ :).
 
 # Features
 
@@ -30,11 +30,11 @@ fds [ options ] search_pattern replace ~/directory/**/somepattern*
 
 Options:
 
-	-l, -literal        Treat pattern as a regular string instead of as Regular Expression
-	-i, -insensitive    Ignore case on search
-	-c, -confirm        Confirm each substitution
-	-v, -verbose        Print debug information
-	-ignore-globs       Ignore glob patterns, comma-separated. Ex. -ignore "vendor/**,node_modules/lib/**.js"
+	-l, --literal        Treat pattern as a regular string instead of as Regular Expression
+	-i, --insensitive    Ignore case on search
+	-c, --confirm        Confirm each substitution
+	-v, --verbose        Print debug information
+	--ignore-globs       Ignore glob patterns, comma-separated. Ex. --ignore-globs "vendor/**,node_modules/lib/**.js"
 
 Examples:
 

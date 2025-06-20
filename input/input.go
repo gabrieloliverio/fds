@@ -15,10 +15,13 @@ const (
 	ConfirmUsage = "Confirm each substitution"
 	InsensitiveUsage = "Ignore case on search"
 	VerboseUsage = "Print debug information"
-	IgnoreUsage = "Ignore glob patterns, comma-separated. Ex. -ignore-globs \"vendor/**,node_modules/lib/**.js\""
+	IgnoreUsage = "Ignore glob patterns, comma-separated. Ex. --ignore-globs \"vendor/**,node_modules/lib/**.js\""
+	HelpUsage = "Print out help"
 )
 
-var Usage = fmt.Sprintf(`Usage:
+var Usage = fmt.Sprintf(`fds is modern and opinionated find/replace CLI program
+
+Usage:
 	echo subject | fds [ options ] search_pattern replace
 	fds [ options ] search_pattern replace ./file
 	fds [ options ] search_pattern replace ~/directory
@@ -26,12 +29,13 @@ var Usage = fmt.Sprintf(`Usage:
 
 Options:
 
-	-l, -literal        %s
-	-i, -insensitive    %s
-	-c, -confirm        %s
-	-v, -verbose        %s
-	-ignore-globs       %s
-`, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage)
+	-l, --literal        %s
+	-i, --insensitive    %s
+	-c, --confirm        %s
+	-v, --verbose        %s
+	--ignore-globs       %s
+	-h, --help           %s
+`, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage, HelpUsage)
 
 type PathArg struct {
 	Value string
@@ -114,6 +118,10 @@ type IgnoreGlobs []string
 
 func (i *IgnoreGlobs) String() string {
 	return strings.Join(*i, ",")
+}
+
+func (i *IgnoreGlobs) Type() string {
+	return "stringSlice"
 }
 
 func (i *IgnoreGlobs) Get() []string {
