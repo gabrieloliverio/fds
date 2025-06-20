@@ -136,8 +136,15 @@ func GetFilesInDir(root string, ignoreGlobs input.IgnoreGlobs, verbose bool) ([]
 }
 
 func CheckError(err error) {
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err == nil {
+		return
 	}
+
+	if thrownErr, ok := err.(input.Error); ok {
+		fmt.Fprintln(os.Stderr, thrownErr.Error())
+		os.Exit(thrownErr.Code)
+	}
+
+	fmt.Println(err)
+	os.Exit(1)
 }
