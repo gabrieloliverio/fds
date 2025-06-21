@@ -2,13 +2,14 @@ package fds
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 )
 
-func ReplaceInFile(args Args, replacer FileReplacer, stdin *os.File, confirmAnswer *ConfirmAnswer) error {
+func ReplaceInFile(args Args, replacer FileReplacer, stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) error {
 	var err error
 	inputStat, _ := os.Stat(args.Path.Value)
 	originalModTime := inputStat.ModTime()
@@ -17,7 +18,7 @@ func ReplaceInFile(args Args, replacer FileReplacer, stdin *os.File, confirmAnsw
 		log.Printf("Replacing %s for %s in file %s", args.Search, args.Replace, args.Path.Value)
 	}
 
-	tmpFile, err := replacer.Replace(os.Stdin, confirmAnswer)
+	tmpFile, err := replacer.Replace(stdin, stdout, confirmAnswer)
 
 	CheckError(err)
 
@@ -72,13 +73,13 @@ func ReplaceInFile(args Args, replacer FileReplacer, stdin *os.File, confirmAnsw
 	return err
 }
 
-func ReplaceInFiles(files []string, stdin *os.File, args Args, config Config, confirmAnswer *ConfirmAnswer) error {
+func ReplaceInFiles(files []string, stdin io.Reader, stdout io.Writer, args Args, config Config, confirmAnswer *ConfirmAnswer) error {
 	for _, file := range files {
 		args.Path.Value = file
 
 		replacer := NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
 
-		err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
+		err := ReplaceInFile(args, replacer, stdin, stdout, confirmAnswer)
 
 		if err != nil {
 			return err

@@ -1,7 +1,9 @@
 package fds
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"testing"
@@ -11,10 +13,10 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 	tempDir := t.TempDir()
 
 	inputFile := createFiles(tempDir, "this is some text", t)
-	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
+	var stdin io.Reader
+	var stdout bytes.Buffer
 
 	defer inputFile.Close()
-	defer stdin.Close()
 
 	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
@@ -23,7 +25,7 @@ func TestFileReplacer_ReplaceInFile_SingleLine(t *testing.T) {
 
 	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	outputFile, err := fileReplacer.Replace(stdin, nil)
+	outputFile, err := fileReplacer.Replace(stdin, &stdout, nil)
 	defer os.Remove(outputFile.Name())
 
 	if err != nil {
@@ -48,10 +50,11 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 	tempDir := t.TempDir()
 
 	inputFile := createFiles(tempDir, "this is some text\nthis is some other text\n", t)
-	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
+
+	var stdin io.Reader
+	var stdout bytes.Buffer
 
 	defer inputFile.Close()
-	defer stdin.Close()
 
 	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
@@ -61,7 +64,7 @@ func TestReplaceInFile_Multiline(t *testing.T) {
 
 	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	outputFile, err := fileReplacer.Replace(stdin, nil)
+	outputFile, err := fileReplacer.Replace(stdin, &stdout, nil)
 	defer os.Remove(outputFile.Name())
 
 	if err != nil {
@@ -86,10 +89,11 @@ func TestReplaceInFile_NotFound(t *testing.T) {
 	tempDir := t.TempDir()
 
 	inputFile := createFiles(tempDir, "this is some text\nthis is some other text\n", t)
-	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
+
+	var stdin io.Reader
+	var stdout bytes.Buffer
 
 	defer inputFile.Close()
-	defer stdin.Close()
 
 	config := NewConfig()
 	config.Flags = map[string]bool{"insensitive": false, "confirm": false, "literal": false}
@@ -99,7 +103,7 @@ func TestReplaceInFile_NotFound(t *testing.T) {
 
 	fileReplacer := NewFileReplacer(inputFile.Name(), search, replace, config)
 
-	outputFile, err := fileReplacer.Replace(stdin, nil)
+	outputFile, err := fileReplacer.Replace(stdin, &stdout, nil)
 	if outputFile != nil {
 		result, err = os.ReadFile(outputFile.Name())
 	}

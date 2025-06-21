@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
+func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	var (
 		lineNumber                  int
 		tmpFile                     *os.File
@@ -51,7 +51,7 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *ConfirmAn
 		if !confirmedAll && !confirmedQuit {
 			matches := FindStringOrPattern(r.search, r.replace, line, 50)
 
-			line, lineChanged = r.confirmMatches(matches, line, lineNumber, stdin, confirmAnswer)
+			line, lineChanged = r.confirmMatches(matches, line, lineNumber, stdin, stdout, confirmAnswer)
 		}
 
 		if lineChanged {
@@ -79,7 +79,7 @@ func (r FileReplacer) confirmAndReplace(stdin *os.File, confirmAnswer *ConfirmAn
 	return tmpFile, nil
 }
 
-func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNumber int, stdin *os.File, confirmAnswer *ConfirmAnswer) (replacedLine string, lineChanged bool) {
+func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNumber int, stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (replacedLine string, lineChanged bool) {
 	var answer rune
 	var err error
 
@@ -102,7 +102,7 @@ func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNum
 		if confirmedAll {
 			answer = ConfirmYes
 		} else {
-			answer, err = ConfirmMatch(thisMatch, r.inputFilePath, lineNumber, stdin)
+			answer, err = ConfirmMatch(thisMatch, r.inputFilePath, lineNumber, stdin, stdout)
 			*confirmAnswer = ConfirmAnswer(answer)
 		}
 

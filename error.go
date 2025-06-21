@@ -31,6 +31,18 @@ func NewConfirmNotOnFileError() Error {
 	return Error{message: "[-c, --confirm] can only be used when files are supplied, not with STDIN nor positional arguments", Code: 45}
 }
 
+func NewFileReadError(file string) Error {
+	return Error{message: fmt.Sprintf("Failed to read file %q. Do you have permission to read it?", file), Code: 46}
+}
+
+func NewFileWriteError(file string) Error {
+	return Error{message: fmt.Sprintf("Failed to write file %q. Do you have permission to write in directory?", file), Code: 47}
+}
+
+func NewTempFileWriteError(dir string) Error {
+	return Error{message: fmt.Sprintf("Failed to write temporary file. Do you have permission to write in directory %q?", dir), Code: 48}
+}
+
 type ConfirmError struct {
 	input   rune
 	message string
