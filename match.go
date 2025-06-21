@@ -2,7 +2,7 @@ package fds
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"regexp"
 
 	"github.com/fatih/color"
@@ -19,12 +19,12 @@ type MatchString struct {
 	IndexEnd   int
 }
 
-func ConfirmMatch(match MatchString, filename string, lineNumber int, stdin *os.File) (rune, error) {
+func ConfirmMatch(match MatchString, filename string, lineNumber int, stdin io.Reader, stdout io.Writer) (rune, error) {
 	red := color.New(color.FgHiRed, color.Bold, color.Italic)
 	green := color.New(color.FgHiGreen, color.Bold)
 
-	fmt.Printf("File\t%s\n", filename)
-	fmt.Printf("%d\t%s%s%s%s\n", lineNumber, match.Before, red.Sprint(match.Search), green.Sprint(match.Replace), match.After)
+	fmt.Fprintf(stdout, "File\t%s\n", filename)
+	fmt.Fprintf(stdout, "%d\t%s%s%s%s\n", lineNumber, match.Before, red.Sprint(match.Search), green.Sprint(match.Replace), match.After)
 
 	confirmText := "[y]es [n]o [a]ll q[uit]"
 	valid := []rune{'y', 'n', 'a', 'q'}

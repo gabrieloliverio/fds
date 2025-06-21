@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/gabrieloliverio/fds"
@@ -18,7 +19,6 @@ var (
 
 func main() {
 	pflag.Usage = func() { fmt.Fprint(os.Stderr, fds.Usage) }
-
 	pflag.BoolVarP(&literal, "literal", "l", false, fds.LiteralUsage)
 	pflag.BoolVarP(&insensitive, "insensitive", "i", false, fds.InsensitiveUsage)
 	pflag.BoolVarP(&confirm, "confirm", "c", false, fds.ConfirmUsage)
@@ -28,25 +28,44 @@ func main() {
 
 	pflag.Parse()
 
-	if help {
-		fmt.Println(fds.Usage)
-
-		os.Exit(0)
-	}
-
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{"confirm": confirm, "insensitive": insensitive, "literal": literal, "verbose": verbose}
 
-	args, err := fds.ReadArgs(os.Stdin, pflag.Args())
-	fds.CheckError(err)
+	if err := execute(os.Args[1:], config, os.Stdin, os.Stdout); err != nil {
+		if thrownErr, ok := err.(fds.Error); ok {
+			fmt.Fprintln(os.Stderr, thrownErr.Error())
+			os.Exit(thrownErr.Code)
+		}
+
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func execute(inputArgs []string, config fds.Config, stdin io.Reader, stdout io.Writer) (err error) {
+	if config.Flags["help"] {
+		fmt.Fprint(stdout, fds.Usage)
+
+		return
+	}
+
+	args, err := fds.ReadArgs(stdin, inputArgs)
+
+	if err != nil {
+		return
+	}
 
 	err = fds.Validate(args, config.Flags)
-	fds.CheckError(err)
+
+	if err != nil {
+		return
+	}
 
 	if args.Path.Value == "" {
 		replacer := fds.NewLineReplacer(args.Search, args.Replace, config.Flags)
+		result, _ := replacer.Replace(args.Subject)
 
-		fmt.Print(replacer.Replace(args.Subject))
+		fmt.Fprint(stdout, result)
 
 		return
 	}
@@ -54,15 +73,18 @@ func main() {
 	if args.Path.IsFile() {
 		replacer := fds.NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
 
-		err = fds.ReplaceInFile(args, replacer, os.Stdin, confirmAnswer)
-		fds.CheckError(err)
+		err = fds.ReplaceInFile(args, replacer, stdin, stdout, confirmAnswer)
 
 		return
 	}
 
 	files, err := fds.GetFilesInDir(args.Path.Value, ignoreGlobs, verbose)
-	fds.CheckError(err)
 
-	err = fds.ReplaceInFiles(files, os.Stdin, args, config, confirmAnswer)
-	fds.CheckError(err)
+	if err != nil {
+		return
+	}
+
+	err = fds.ReplaceInFiles(files, stdin, stdout, args, config, confirmAnswer)
+
+	return
 }

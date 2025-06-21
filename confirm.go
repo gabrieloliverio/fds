@@ -3,7 +3,7 @@ package fds
 import (
 	"bufio"
 	"fmt"
-	"os"
+	"io"
 	"slices"
 )
 
@@ -13,7 +13,7 @@ const (
 
 type ConfirmAnswer rune
 
-func Confirm(stdin *os.File, text string, valid []rune) (rune, error) {
+func Confirm(stdin io.Reader, text string, valid []rune) (rune, error) {
 	var input rune
 	var err error
 

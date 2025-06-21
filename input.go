@@ -80,17 +80,15 @@ func Validate(args Args, flags map[string]bool) error {
 	return nil
 }
 
-func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
-	stdinStat, _ := stdin.Stat()
+func ReadArgs(stdin io.Reader, inputArgs []string) (Args, error) {
+	stdInput, err := io.ReadAll(stdin)
 
-	if stdinStat.Size() > 0 {
-		stdin, _ := io.ReadAll(stdin)
-
+	if len(stdInput) > 0 {
 		if len(inputArgs) < 2 {
 			return Args{}, NewInvalidArgumentsError()
 		}
 
-		return Args{Subject: string(stdin), Search: inputArgs[0], Replace: inputArgs[1]}, nil
+		return Args{Subject: string(stdInput), Search: inputArgs[0], Replace: inputArgs[1]}, nil
 	}
 
 	if len(inputArgs) < 3 {

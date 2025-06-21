@@ -1,6 +1,7 @@
 package fds
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"path"
@@ -18,12 +19,15 @@ func TestReplaceInFile_RenameTmpFileToOriginalFileWhenNotNil(t *testing.T) {
 	args := Args{Path: PathArg{Value: inputPath}, Search: "Lorem", Replace: "mamãe"}
 	config := NewConfig()
 	config.Flags = map[string]bool{}
+
 	var confirmAnswer *ConfirmAnswer
+	var stdout bytes.Buffer
+
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
 	var replacer = NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
-	err := ReplaceInFile(args, replacer, stdin, confirmAnswer)
+	err := ReplaceInFile(args, replacer, stdin, &stdout, confirmAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
@@ -47,12 +51,15 @@ func TestReplaceInFile_LeavesFileUntouchedWhenNothingWasReplaced(t *testing.T) {
 	args := Args{Path: PathArg{Value: inputPath}, Search: "no existe", Replace: "bar"}
 	config := NewConfig()
 	config.Flags = map[string]bool{}
+
 	var confirmAnswer *ConfirmAnswer
+	var stdout bytes.Buffer
+
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
 	var replacer = NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
-	err = ReplaceInFile(args, replacer, stdin, confirmAnswer)
+	err = ReplaceInFile(args, replacer, stdin, &stdout, confirmAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
@@ -83,6 +90,7 @@ func TestReplaceInFiles(t *testing.T) {
 	inputPath2 := path.Join(tempDir, "input2")
 	createTestFile(tempDir, "input2", "Lorem ipsum dolor sit amet", t)
 
+	var stdout bytes.Buffer
 	stdin, _ := os.Create(path.Join(tempDir, "stdin"))
 
 	args := Args{Path: PathArg{Value: inputPath1}, Search: "Lorem", Replace: "mamãe"}
@@ -90,7 +98,7 @@ func TestReplaceInFiles(t *testing.T) {
 	config := NewConfig()
 	config.Flags = map[string]bool{}
 
-	err := ReplaceInFiles([]string{inputPath1, inputPath2}, stdin, args, config, &defaultAnswer)
+	err := ReplaceInFiles([]string{inputPath1, inputPath2}, stdin, &stdout, args, config, &defaultAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)

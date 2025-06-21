@@ -39,9 +39,9 @@ func NewFileReplacer(inputFilePath, search, replace string, config Config) FileR
 /*
  * ReplaceInFile replaces a given pattern when found in `inputFile`. Lines are written into `outputFile`
  */
-func (r FileReplacer) Replace(stdin *os.File, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
+func (r FileReplacer) Replace(stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	if r.flags["confirm"] {
-		outputFile, err = r.confirmAndReplace(stdin, confirmAnswer)
+		outputFile, err = r.confirmAndReplace(stdin, stdout, confirmAnswer)
 
 		return
 	}
@@ -55,7 +55,7 @@ func (r FileReplacer) replaceAll() (tmpFile *os.File, err error) {
 	inputFile, err := openInputFile(r.inputFilePath)
 
 	if err != nil {
-		return
+		return nil, NewFileReadError(r.inputFilePath)
 	}
 
 	if inputFileStat, _ := inputFile.Stat(); inputFileStat.Size() == 0 {
@@ -71,7 +71,7 @@ func (r FileReplacer) replaceAll() (tmpFile *os.File, err error) {
 		line, err := reader.ReadString('\n')
 
 		if err != nil && err != io.EOF {
-			return nil, fmt.Errorf("Error while reading file: %s", err)
+			return nil, NewFileReadError(r.inputFilePath)
 		}
 
 		replacedLine, lineChanged := r.LineReplacer.Replace(line)
@@ -94,8 +94,17 @@ func (r FileReplacer) replaceAll() (tmpFile *os.File, err error) {
 	writer.Flush()
 
 	if fileChanged {
-		tmpFile, _ = os.CreateTemp("", filepath.Base(inputFile.Name()))
-		io.Copy(tmpFile, buffer)
+		tmpFile, err = os.CreateTemp("", filepath.Base(inputFile.Name()))
+
+		if err != nil {
+			return nil, NewTempFileWriteError(filepath.Base(inputFile.Name()))
+		}
+
+		_, err = io.Copy(tmpFile, buffer)
+
+		if err != nil {
+			return nil, NewFileWriteError(inputFile.Name())
+		}
 	}
 
 	return tmpFile, err
