@@ -35,6 +35,7 @@ Options:
 	-c, --confirm        Confirm each substitution
 	-v, --verbose        Print debug information
 	--ignore-globs       Ignore glob patterns, comma-separated. Ex. --ignore-globs "vendor/**,node_modules/lib/**.js"
+	--workers            Number of workers created to process the substitutions. Default value: 4
 
 Examples:
 
@@ -43,6 +44,12 @@ echo "baz bar" | fds "baz" "foo" # prints out "foo bar"
 
 # Replace in a file
 fds "foo" "bar" ./file.txt
+
+# Replace in files from a directory
+fds "foo" "bar" ./dir
+
+# Replace in files from a directory using 8 workers instead of 4
+fds "foo" "bar" ./dir --workers 8
 
 # Confirm each replacement
 fds -c "foo" "bar" ./file.txt
@@ -71,6 +78,6 @@ fds "foo" "bar" ./dir/**/*.txt
 - [x] Directories
 - [x] Glob
 - [x] Accept --ignore-globs
-- [ ] Concurrency when reading/writing several files
+- [x] Concurrency when reading/writing several files
 - [ ] Ignore files listed in .gitignore
 - [ ] Multiple files, directories and/or globs

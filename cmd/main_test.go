@@ -11,13 +11,16 @@ import (
 )
 
 func TestExecuteHelp(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{"help": true}
 
-	var stdin bytes.Buffer
 	var stdout bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
+	stdin.WriteString("lorem ipsum")
 
-	err := execute([]string{"cmd"}, config, &stdin, &stdout)
+	err := execute([]string{"cmd"}, config, stdin, &stdout)
 
 	if err != nil {
 		t.Errorf("execute() was not supposed to return error, but err %s was returned", err)
@@ -32,13 +35,16 @@ func TestExecuteHelp(t *testing.T) {
 }
 
 func TestExecuteInvalidArgumentError(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{}
 
-	var stdin bytes.Buffer
 	var stdout bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
+	stdin.WriteString("lorem ipsum")
 
-	err := execute([]string{"cmd"}, config, &stdin, &stdout)
+	err := execute([]string{"cmd"}, config, stdin, &stdout)
 
 	if err == nil {
 		t.Error("execute() was supposed to return error, but none was returned")
@@ -52,13 +58,16 @@ func TestExecuteInvalidArgumentError(t *testing.T) {
 }
 
 func TestExecuteLiteralAndInsensitiveError(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{"literal": true, "insensitive": true}
 
 	args := []string{"foo", "bar"}
 
-	var stdin = bytes.NewBufferString("lorem ipsum")
 	var stdout bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
+	stdin.WriteString("lorem ipsum")
 
 	err := execute(args, config, stdin, &stdout)
 
@@ -74,15 +83,17 @@ func TestExecuteLiteralAndInsensitiveError(t *testing.T) {
 }
 
 func TestExecuteFileNotFoundError(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{}
 
 	args := []string{"foo", "bar", "baz"}
 
-	var stdin bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
 	var stdout bytes.Buffer
 
-	err := execute(args, config, &stdin, &stdout)
+	err := execute(args, config, stdin, &stdout)
 
 	if err == nil {
 		t.Error("execute() was supposed to return error, but none was returned")
@@ -96,13 +107,17 @@ func TestExecuteFileNotFoundError(t *testing.T) {
 }
 
 func TestExecuteInvalidRegexError(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{}
 
 	args := []string{"(lorem", "bar"}
 
-	var stdin = bytes.NewBufferString("lorem ipsum")
 	var stdout bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
+	stdin.WriteString("lorem ipsum")
+	stdin.Seek(0, io.SeekStart)
 
 	err := execute(args, config, stdin, &stdout)
 
@@ -118,13 +133,17 @@ func TestExecuteInvalidRegexError(t *testing.T) {
 }
 
 func TestExecuteWithStdinSuccess(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{}
 
 	args := []string{"lorem", "bar"}
 
-	var stdin = bytes.NewBufferString("lorem ipsum")
 	var stdout bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
+	stdin.WriteString("lorem ipsum")
+	stdin.Seek(0, io.SeekStart)
 
 	err := execute(args, config, stdin, &stdout)
 
@@ -141,20 +160,23 @@ func TestExecuteWithStdinSuccess(t *testing.T) {
 }
 
 func TestExecuteWithFileSuccess(t *testing.T) {
+	tempDir := t.TempDir()
+
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{}
 
-	path := filepath.Join(t.TempDir(), "input")
+	path := filepath.Join(tempDir, "input")
 	file, err := os.Create(path)
 
 	file.WriteString("lorem ipsum")
+	file.Seek(0, io.SeekStart)
 
 	args := []string{"lorem", "bar", path}
 
-	var stdin bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
 	var stdout bytes.Buffer
 
-	err = execute(args, config, &stdin, &stdout)
+	err = execute(args, config, stdin, &stdout)
 
 	if err != nil {
 		t.Errorf("execute() was not supposed to return error, but %q was returned", err)
@@ -169,20 +191,23 @@ func TestExecuteWithFileSuccess(t *testing.T) {
 }
 
 func TestExecuteWithFileAndInsensitiveFlagSuccess(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "input")
+	tempDir := t.TempDir()
+
+	path := filepath.Join(tempDir, "input")
 	file, err := os.Create(path)
 
 	file.WriteString("Lorem ipsum")
+	file.Seek(0, io.SeekStart)
 
 	args := []string{"lorem", "bar", path}
 
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{"insensitive": true}
 
-	var stdin bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
 	var stdout bytes.Buffer
 
-	err = execute(args, config, &stdin, &stdout)
+	err = execute(args, config, stdin, &stdout)
 
 	if err != nil {
 		t.Errorf("execute() was not supposed to return error, but %q was returned", err)
@@ -206,17 +231,19 @@ func TestExecuteWithDirectory(t *testing.T) {
 	file2, err := os.Create(path2)
 
 	file1.WriteString("lorem ipsum")
+	file1.Seek(0, io.SeekStart)
 	file2.WriteString("dolor sit amet")
+	file2.Seek(0, io.SeekStart)
 
 	args := []string{"lorem", "bar", tempDir}
 
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{}
 
-	var stdin bytes.Buffer
+	var stdin, _ = os.Create(filepath.Join(tempDir, "stdin"))
 	var stdout bytes.Buffer
 
-	err = execute(args, config, &stdin, &stdout)
+	err = execute(args, config, stdin, &stdout)
 
 	if err != nil {
 		t.Errorf("execute() was not supposed to return error, but %q was returned", err)

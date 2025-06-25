@@ -41,7 +41,7 @@ func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confi
 		lineNumber++
 
 		if err != nil && err != io.EOF {
-			return nil, fmt.Errorf("Error while reading file: %s", err)
+			return nil, NewFileReadError(r.inputFilePath)
 		}
 
 		if confirmedAll {
@@ -58,11 +58,7 @@ func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confi
 			fileChanged = true
 		}
 
-		_, errWrite := writer.WriteString(line)
-
-		if errWrite != nil {
-			return nil, fmt.Errorf("Error while writing temporary file: %s", err)
-		}
+		writer.WriteString(line)
 
 		if err != nil && err == io.EOF {
 			break
@@ -72,8 +68,18 @@ func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confi
 	writer.Flush()
 
 	if fileChanged {
-		tmpFile, _ = os.CreateTemp("", filepath.Base(inputFile.Name()))
-		io.Copy(tmpFile, buffer)
+		directory := filepath.Base(inputFile.Name())
+		tmpFile, err = os.CreateTemp("", directory)
+
+		if err != nil {
+			return nil, NewTempFileWriteError(directory)
+		}
+
+		_, err = io.Copy(tmpFile, buffer)
+
+		if err != nil {
+			return nil, NewTempFileWriteError(directory)
+		}
 	}
 
 	return tmpFile, nil

@@ -11,6 +11,7 @@ import (
 
 var (
 	literal, insensitive, confirm, verbose, help bool
+	workers int
 	ignoreGlobs                            fds.IgnoreGlobs
 	err                                    error
 	defaultAnswer                          = fds.ConfirmAnswer('n')
@@ -24,12 +25,14 @@ func main() {
 	pflag.BoolVarP(&confirm, "confirm", "c", false, fds.ConfirmUsage)
 	pflag.BoolVarP(&verbose, "verbose", "v", false, fds.VerboseUsage)
 	pflag.BoolVarP(&help, "help", "h", false, fds.HelpUsage)
+	pflag.IntVar(&workers, "workers", 4, fds.WorkersUsage)
 	pflag.Var(&ignoreGlobs, "ignore-globs", fds.IgnoreUsage)
 
 	pflag.Parse()
 
 	config := fds.NewConfig()
 	config.Flags = map[string]bool{"confirm": confirm, "insensitive": insensitive, "literal": literal, "verbose": verbose}
+	config.Workers = workers
 
 	if err := execute(os.Args[1:], config, os.Stdin, os.Stdout); err != nil {
 		if thrownErr, ok := err.(fds.Error); ok {
@@ -42,7 +45,7 @@ func main() {
 	}
 }
 
-func execute(inputArgs []string, config fds.Config, stdin io.Reader, stdout io.Writer) (err error) {
+func execute(inputArgs []string, config fds.Config, stdin *os.File, stdout io.Writer) (err error) {
 	if config.Flags["help"] {
 		fmt.Fprint(stdout, fds.Usage)
 
@@ -73,7 +76,7 @@ func execute(inputArgs []string, config fds.Config, stdin io.Reader, stdout io.W
 	if args.Path.IsFile() {
 		replacer := fds.NewFileReplacer(args.Path.Value, args.Search, args.Replace, config)
 
-		err = fds.ReplaceInFile(args, replacer, stdin, stdout, confirmAnswer)
+		err = fds.ReplaceInFile(replacer, stdin, stdout, confirmAnswer)
 
 		return
 	}
@@ -88,3 +91,4 @@ func execute(inputArgs []string, config fds.Config, stdin io.Reader, stdout io.W
 
 	return
 }
+

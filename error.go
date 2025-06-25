@@ -2,33 +2,42 @@ package fds
 
 import "fmt"
 
+type InputError struct {
+	message string
+	Code    int
+}
+
+func (e InputError) Error() string {
+	return fmt.Sprintf("%s\n\n%s", Usage, e.message)
+}
+
 type Error struct {
 	message string
 	Code    int
 }
 
-func (u Error) Error() string {
-	return fmt.Sprintf("%s\n\n%s", Usage, u.message)
+func (e Error) Error() string {
+	return e.message
 }
 
-func NewInvalidRegExpError() Error {
-	return Error{message: "subject is not a valid Regular Expression", Code: 42}
+func NewInvalidRegExpError() InputError {
+	return InputError{message: "subject is not a valid Regular Expression", Code: 42}
 }
 
-func NewInvalidArgumentsError() Error {
-	return Error{message: "Invalid arguments", Code: 43}
+func NewInvalidArgumentsError() InputError {
+	return InputError{message: "Invalid arguments", Code: 43}
 }
 
-func NewInvalidArgumentsErrorFileNotFound(filePath string) Error {
-	return Error{message: fmt.Sprintf("File '%s' could not be found", filePath), Code: 44}
+func NewInvalidArgumentsErrorFileNotFound(filePath string) InputError {
+	return InputError{message: fmt.Sprintf("File '%s' could not be found", filePath), Code: 44}
 }
 
-func NewLiteralInsensitiveError() Error {
-	return Error{message: "[-l, --literal] cannot be used along with [ -i, --insensitive ]", Code: 45}
+func NewLiteralInsensitiveError() InputError {
+	return InputError{message: "[-l, --literal] cannot be used along with [ -i, --insensitive ]", Code: 45}
 }
 
-func NewConfirmNotOnFileError() Error {
-	return Error{message: "[-c, --confirm] can only be used when files are supplied, not with STDIN nor positional arguments", Code: 45}
+func NewConfirmNotOnFileError() InputError {
+	return InputError{message: "[-c, --confirm] can only be used when files are supplied, not with STDIN nor positional arguments", Code: 45}
 }
 
 func NewFileReadError(file string) Error {
@@ -41,6 +50,22 @@ func NewFileWriteError(file string) Error {
 
 func NewTempFileWriteError(dir string) Error {
 	return Error{message: fmt.Sprintf("Failed to write temporary file. Do you have permission to write in directory %q?", dir), Code: 48}
+}
+
+func NewStdinReadError() Error {
+	return Error{message: "Failed to read from Stdin", Code: 49}
+}
+
+func NewRenameFileError(file string) Error {
+	return Error{message: fmt.Sprintf("Failed to rename temp file into original file %q", file), Code: 50}
+}
+
+func NewAbortedOperationError() Error {
+	return Error{message: "Aborted operation", Code: 51}
+}
+
+func NewDirectoryReadError(dir string) Error {
+	return Error{message: fmt.Sprintf("Failed to read directory %q. Do you have permission to read it?", dir), Code: 52}
 }
 
 type ConfirmError struct {

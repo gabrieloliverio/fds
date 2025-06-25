@@ -121,7 +121,16 @@ func TestValidate(t *testing.T) {
 			input: validationInput{
 				args:  Args{Subject: "Foo Bar", Search: "Foo", Replace: ""},
 				usage: "",
-				flags: map[string]bool{"literal": false, "insensitive": true, "confirm": false},
+				flags: map[string]bool{"literal": false, "insensitive": false, "confirm": true},
+			},
+			expectError: true,
+		},
+		{
+			name: "Invalid regexp",
+			input: validationInput{
+				args:  Args{Subject: "Foo Bar", Search: "((no bueno)", Replace: ""},
+				usage: "",
+				flags: map[string]bool{"literal": false, "insensitive": false, "confirm": false},
 			},
 			expectError: true,
 		},
@@ -156,6 +165,21 @@ func TestReadArgs_Stdin(t *testing.T) {
 	}
 }
 
+func TestReadArgs_File(t *testing.T) {
+	tempDir := os.TempDir()
+
+	file, _ := os.Create(path.Join(tempDir, "file"))
+	file.WriteString("Lorem ipsum")
+	file.Seek(0, io.SeekStart)
+
+	stdin := createTempFile(tempDir, "", t)
+	result, _ := ReadArgs(stdin, []string{"search", "replace", file.Name()})
+
+	if result.Path.Value != file.Name() || result.Subject != file.Name() {
+		t.Errorf(`ReadArgs() did not return file path in args. Subject: %v. Path.Value: %v`, result.Subject, result.Path.Value)
+	}
+}
+
 func TestReadArgs_Stdin_NoParametersReturnError(t *testing.T) {
 	stdin := createTempFile(os.TempDir(), "my subject", t)
 
@@ -169,7 +193,7 @@ func TestReadArgs_Stdin_NoParametersReturnError(t *testing.T) {
 func TestReadArgs_FileNotFound(t *testing.T) {
 	stdin := createTempFile(os.TempDir(), "", t)
 
-	_, err := ReadArgs(stdin, []string{"search", "replace", "file_not_found"})
+	_, err := ReadArgs(stdin, []string{"search", "replace", "./file_not_found"})
 
 	if err == nil {
 		t.Errorf(`ReadArgs() expected error, did not get error"`)
@@ -247,6 +271,52 @@ func TestIgnoreGlobs_String(t *testing.T) {
 
 			if result != tc.want {
 				t.Errorf(`IgnoreGlob.String() = "%s", want "%s"`, result, tc.want)
+			}
+		})
+	}
+}
+
+func TestPathArg(t *testing.T) {
+	type test struct {
+		value    string
+		fileInfo os.FileInfo
+
+		isDir  bool
+		isFile bool
+	}
+
+	tempDir := t.TempDir()
+	tempDirStat, _ := os.Stat(tempDir)
+
+	file1, _ := os.CreateTemp(tempDir, "")
+	fileStat1, _ := file1.Stat()
+
+	tests := []test{
+		{
+			value:    file1.Name(),
+			fileInfo: fileStat1,
+			isFile:   true,
+		},
+		{
+			value:    tempDir,
+			fileInfo: tempDirStat,
+			isDir:    true,
+		},
+		{
+			value: "/invalid",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run("PathArg", func(t *testing.T) {
+			pathArg := PathArg{Value: tc.value, fileInfo: tc.fileInfo}
+
+			if pathArg.IsDir() != tc.isDir {
+				t.Errorf(`PathArg.IsDir() = "%t", want "%t"`, pathArg.IsDir(), tc.isDir)
+			}
+
+			if pathArg.IsFile() != tc.isFile {
+				t.Errorf(`PathArg.IsFile() = "%t", want "%t"`, pathArg.IsFile(), tc.isFile)
 			}
 		})
 	}

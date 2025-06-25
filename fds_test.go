@@ -27,7 +27,7 @@ func TestReplaceInFile_RenameTmpFileToOriginalFileWhenNotNil(t *testing.T) {
 
 	var replacer = NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
-	err := ReplaceInFile(args, replacer, stdin, &stdout, confirmAnswer)
+	err := ReplaceInFile(replacer, stdin, &stdout, confirmAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)
@@ -59,7 +59,7 @@ func TestReplaceInFile_LeavesFileUntouchedWhenNothingWasReplaced(t *testing.T) {
 
 	var replacer = NewFileReplacer(inputPath, args.Search, args.Replace, config)
 
-	err = ReplaceInFile(args, replacer, stdin, &stdout, confirmAnswer)
+	err = ReplaceInFile(replacer, stdin, &stdout, confirmAnswer)
 
 	if err != nil {
 		t.Errorf("ReplaceInFile() returned an expected error '%s'\n", err)

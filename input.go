@@ -17,6 +17,7 @@ const (
 	VerboseUsage     = "Print debug information"
 	IgnoreUsage      = "Ignore glob patterns, comma-separated. Ex. --ignore-globs \"vendor/**,node_modules/lib/**.js\""
 	HelpUsage        = "Print out help"
+	WorkersUsage     = "Number of workers created to process the substitutions. Default value: 4"
 )
 
 var Usage = fmt.Sprintf(`fds is modern and opinionated find/replace CLI program
@@ -34,8 +35,9 @@ Options:
 	-c, --confirm        %s
 	-v, --verbose        %s
 	--ignore-globs       %s
+	--workers            %s
 	-h, --help           %s
-`, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage, HelpUsage)
+`, LiteralUsage, InsensitiveUsage, ConfirmUsage, VerboseUsage, IgnoreUsage, WorkersUsage, HelpUsage)
 
 type PathArg struct {
 	Value    string
@@ -43,10 +45,18 @@ type PathArg struct {
 }
 
 func (p PathArg) IsDir() bool {
+	if p.fileInfo == nil {
+		return false
+	}
+
 	return p.fileInfo.IsDir()
 }
 
 func (p PathArg) IsFile() bool {
+	if p.fileInfo == nil {
+		return false
+	}
+
 	return !p.fileInfo.IsDir()
 }
 
@@ -80,15 +90,26 @@ func Validate(args Args, flags map[string]bool) error {
 	return nil
 }
 
-func ReadArgs(stdin io.Reader, inputArgs []string) (Args, error) {
+func readStdin(stdin *os.File, inputArgs []string) (Args, error) {
 	stdInput, err := io.ReadAll(stdin)
 
-	if len(stdInput) > 0 {
-		if len(inputArgs) < 2 {
-			return Args{}, NewInvalidArgumentsError()
-		}
+	if err != nil {
+		return Args{}, NewStdinReadError()
+	}
 
-		return Args{Subject: string(stdInput), Search: inputArgs[0], Replace: inputArgs[1]}, nil
+	if len(inputArgs) < 2 {
+		return Args{}, NewInvalidArgumentsError()
+	}
+
+	return Args{Subject: string(stdInput), Search: inputArgs[0], Replace: inputArgs[1]}, nil
+}
+
+func ReadArgs(stdin *os.File, inputArgs []string) (Args, error) {
+	stat, _ := stdin.Stat()
+	isStdin := stat.Size() > 0
+
+	if isStdin {
+		return readStdin(stdin, inputArgs)
 	}
 
 	if len(inputArgs) < 3 {

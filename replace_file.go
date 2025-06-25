@@ -36,9 +36,6 @@ func NewFileReplacer(inputFilePath, search, replace string, config Config) FileR
 	return replacer
 }
 
-/*
- * ReplaceInFile replaces a given pattern when found in `inputFile`. Lines are written into `outputFile`
- */
 func (r FileReplacer) Replace(stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	if r.flags["confirm"] {
 		outputFile, err = r.confirmAndReplace(stdin, stdout, confirmAnswer)
