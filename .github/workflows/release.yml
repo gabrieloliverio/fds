@@ -30,8 +30,10 @@ jobs:
           mkdir -p dist
           for GOOS in ${{ matrix.goos }}; do
             for GOARCH in ${{ matrix.goarch }}; do
-              BIN_NAME="fds-${GOOS}-${GOARCH}"
-              env GOOS=$GOOS GOARCH=$GOARCH go build -o dist/${BIN_NAME} ./cmd
+              PACKAGE_NAME="fds-${GOOS}-${GOARCH}.tar.gz"
+              env GOOS=$GOOS GOARCH=$GOARCH go build -o dist/fds ./cmd
+              tar czf dist/${PACKAGE_NAME} -C dist/ fds
+              rm dist/fds
             done
           done
 
