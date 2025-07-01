@@ -12,13 +12,14 @@ type Replacer interface {
 type LineReplacer struct {
 	flags map[string]bool
 
-	search  *regexp.Regexp
-	replace string
+	search       string
+	searchRegexp *regexp.Regexp
+	replace      string
 }
 
 func NewLineReplacer(search, replace string, flags map[string]bool) LineReplacer {
-	replacer := LineReplacer{flags: flags, replace: replace}
-	replacer.search = replacer.compilePattern(search)
+	replacer := LineReplacer{flags: flags, replace: replace, search: search}
+	replacer.searchRegexp = replacer.compilePattern(search)
 
 	return replacer
 }
@@ -38,7 +39,7 @@ func (s LineReplacer) compilePattern(search string) *regexp.Regexp {
 }
 
 func (s LineReplacer) Replace(subject string) (result string, replaced bool) {
-	result = s.search.ReplaceAllString(subject, s.replace)
+	result = s.searchRegexp.ReplaceAllString(subject, s.replace)
 
 	if result != subject {
 		replaced = true
@@ -59,7 +60,7 @@ func (r LineReplacer) ReplaceStringRange(subject string, stringRange [2]int) str
 	var prepend, append []byte
 
 	subjectSubstring := []byte(subject)[stringRange[0]:stringRange[1]]
-	replaced := r.search.ReplaceAll(subjectSubstring, []byte(r.replace))
+	replaced := r.searchRegexp.ReplaceAll(subjectSubstring, []byte(r.replace))
 
 	prepend = []byte(subject)[0:stringRange[0]]
 	append = []byte(subject)[stringRange[1]:]

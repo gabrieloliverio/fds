@@ -27,18 +27,18 @@ type FileReplacer struct {
 
 func NewFileReplacer(inputFilePath, search, replace string, config Config) FileReplacer {
 	replacer := FileReplacer{
-		LineReplacer:  LineReplacer{flags: config.Flags, replace: replace},
+		LineReplacer:  LineReplacer{flags: config.Flags, replace: replace, search: search},
 		inputFilePath: inputFilePath,
 		config:        config,
 	}
-	replacer.search = replacer.compilePattern(search)
+	replacer.searchRegexp = replacer.compilePattern(search)
 
 	return replacer
 }
 
 func (r FileReplacer) Replace(stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	if r.flags["confirm"] {
-		outputFile, err = r.confirmAndReplace(stdin, stdout, confirmAnswer)
+		outputFile, err = r.replaceInteractive(stdin, stdout, confirmAnswer)
 
 		return
 	}

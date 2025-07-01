@@ -27,7 +27,6 @@ func TestReplaceInFile_ConfirmAll(t *testing.T) {
 
 	confirm := ConfirmAnswer('a')
 	outputFile, err := fileReplacer.Replace(stdin, &stdout, &confirm)
-	defer os.Remove(outputFile.Name())
 
 	if err != nil {
 		t.Fatalf("Failed to replace content on file: %q", err)

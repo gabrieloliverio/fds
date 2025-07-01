@@ -58,8 +58,8 @@ func FindStringOrPattern(pattern *regexp.Regexp, replace, subject string, bytesI
 			leftmostIndex = 0
 		}
 
-		if rightmostIndex > len(subject) {
-			rightmostIndex = len(subject)
+		if length := len(subject); rightmostIndex > length {
+			rightmostIndex = length
 		}
 
 		subjectSlice := []byte(subject)

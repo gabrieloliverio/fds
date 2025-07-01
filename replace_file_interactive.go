@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
+func (r FileReplacer) replaceInteractive(stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (outputFile *os.File, err error) {
 	var (
 		lineNumber                  int
 		tmpFile                     *os.File
@@ -49,7 +49,7 @@ func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confi
 		}
 
 		if !confirmedAll && !confirmedQuit {
-			matches := FindStringOrPattern(r.search, r.replace, line, 50)
+			matches := FindStringOrPattern(r.searchRegexp, r.replace, line, 50)
 
 			line, lineChanged = r.confirmMatches(matches, line, lineNumber, stdin, stdout, confirmAnswer)
 		}
@@ -88,13 +88,18 @@ func (r FileReplacer) confirmAndReplace(stdin io.Reader, stdout io.Writer, confi
 func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNumber int, stdin io.Reader, stdout io.Writer, confirmAnswer *ConfirmAnswer) (replacedLine string, lineChanged bool) {
 	var answer rune
 	var err error
+	var lenSearch = len(r.search)
+	var lenReplace = len(r.replace)
+	var offset = lenReplace - lenSearch
 
 	confirmedQuit := rune(*confirmAnswer) == ConfirmQuit
 	confirmedAll := rune(*confirmAnswer) == ConfirmAll
 
 	replacedLine = line
 
-	for i, thisMatch := range matches {
+	for i := range len(matches) {
+		thisMatch := matches[i]
+
 		if confirmedQuit {
 			continue
 		}
@@ -102,7 +107,7 @@ func (r FileReplacer) confirmMatches(matches []MatchString, line string, lineNum
 		stringRange := [2]int{0, thisMatch.IndexEnd}
 		if i > 0 {
 			// Gets the previous one
-			stringRange = [2]int{matches[i-1].IndexEnd, thisMatch.IndexEnd}
+			stringRange = [2]int{matches[i-1].IndexEnd + offset, thisMatch.IndexEnd + offset}
 		}
 
 		if confirmedAll {
