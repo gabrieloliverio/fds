@@ -31,7 +31,7 @@ jobs:
           for GOOS in ${{ matrix.goos }}; do
             for GOARCH in ${{ matrix.goarch }}; do
               PACKAGE_NAME="fds-${GOOS}-${GOARCH}.tar.gz"
-              env GOOS=$GOOS GOARCH=$GOARCH go build -o dist/fds ./cmd
+              env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-w -s" -o dist/fds ./cmd
               tar czf dist/${PACKAGE_NAME} -C dist/ fds
               rm dist/fds
             done
